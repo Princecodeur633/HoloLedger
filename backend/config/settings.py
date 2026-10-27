@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-only-change-me")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "hololedger.onrender.com")
 
 
 INSTALLED_APPS = [
