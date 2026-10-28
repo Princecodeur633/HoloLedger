@@ -66,7 +66,7 @@ export function BalanceCard({
   const shown = useCountUp(Number(balance));
   return (
     // Dark mode: a dark card instead of the light "primary" one, which glares at night.
-    <div className="bg-primary text-primary-foreground dark:bg-card dark:text-card-foreground dark:ring-foreground/10 relative overflow-hidden rounded-2xl p-6 shadow-sm dark:ring-1">
+    <div className="bg-foreground text-background dark:bg-card dark:text-card-foreground dark:ring-foreground/10 relative overflow-hidden rounded-2xl p-6 shadow-sm dark:ring-1">
       {/* Decorative bank drawn into the card background, partly cut off by the edges. */}
       <Landmark
         className="pointer-events-none absolute -right-6 -bottom-8 size-44 -rotate-6 opacity-[0.12] sm:size-52"
@@ -74,7 +74,7 @@ export function BalanceCard({
         aria-hidden
       />
       <div
-        className="bg-primary-foreground/5 dark:bg-foreground/5 pointer-events-none absolute -top-16 -right-16 size-48 rounded-full"
+        className="bg-background/5 dark:bg-foreground/5 pointer-events-none absolute -top-16 -right-16 size-48 rounded-full"
         aria-hidden
       />
       <div className="relative min-w-0 pr-10 sm:pr-24">

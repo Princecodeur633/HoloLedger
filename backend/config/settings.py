@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "goals",
     "recurring",
     "imports",
+    "reminders",
 ]
 
 MIDDLEWARE = [
@@ -168,3 +169,10 @@ WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET", "")
 WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
 WHATSAPP_BUSINESS_NUMBER = os.getenv("WHATSAPP_BUSINESS_NUMBER", "")
 WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v23.0")
+
+# Daily reminder notifications (Web Push, free). Keys: `python manage.py generate_vapid_keys`.
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_CONTACT = os.getenv("VAPID_CONTACT", "mailto:admin@hololedger.app")
+# Shared with Vercel Cron, which calls /api/reminders/cron/daily/ with "Bearer <CRON_SECRET>".
+CRON_SECRET = os.getenv("CRON_SECRET", "")

@@ -69,6 +69,7 @@ export default function NewTransactionPage() {
         key={prefill.key}
         initial={prefill.values}
         currency={currency}
+        quick
         onSubmit={save}
       />
     </div>

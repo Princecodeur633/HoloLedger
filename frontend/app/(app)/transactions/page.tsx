@@ -15,7 +15,14 @@ import { download } from "@/lib/api";
 import { today } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
 import { useOutbox } from "@/lib/outbox";
-import type { Account, Paginated, Period, Transaction, TransactionType } from "@/lib/types";
+import type {
+  Account,
+  Category,
+  Paginated,
+  Period,
+  Transaction,
+  TransactionType,
+} from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
@@ -25,11 +32,26 @@ const TYPES: { value: TransactionType | ""; label: string }[] = [
   { value: "income", label: "Revenus" },
 ];
 
+type When = "all" | "month" | "custom";
+
+const WHEN: { value: When; label: string }[] = [
+  { value: "all", label: "Tout" },
+  { value: "month", label: "Ce mois" },
+  { value: "custom", label: "Autre période" },
+];
+
+const chip = (active: boolean) =>
+  cn(
+    "rounded-full border px-3 py-1 text-sm transition-colors",
+    active ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground",
+  );
+
 export default function TransactionsPage() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim());
   const [type, setType] = useState<TransactionType | "">("");
-  const [allTime, setAllTime] = useState(true);
+  const [when, setWhen] = useState<When>("all");
+  const [category, setCategory] = useState("");
   const [range, setRange] = useState<{ period: Period; date: string }>({
     period: "month",
     date: today(),
@@ -38,12 +60,15 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1);
   const pending = useOutbox();
   const { data: accounts } = useApi<Account[]>("/accounts/");
+  const { data: categories } = useApi<Category[]>("/categories/");
 
   const filters = {
     search: deferredSearch,
     type,
     account,
-    ...(allTime ? {} : range),
+    category,
+    ...(when === "month" ? { period: "month", date: today() } : {}),
+    ...(when === "custom" ? range : {}),
   };
   const { data, loading, error } = useApi<Paginated<Transaction>>("/transactions/", {
     ...filters,
@@ -93,7 +118,7 @@ export default function TransactionsPage() {
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           type="search"
-          placeholder="Rechercher (description, catégorie, montant)"
+          placeholder="Rechercher une opération, un montant…"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -110,22 +135,55 @@ export default function TransactionsPage() {
             type="button"
             onClick={() => {
               setType(t.value);
+              setCategory("");
               resetPage();
             }}
-            className={cn(
-              "rounded-full border px-3 py-1 text-sm",
-              type === t.value
-                ? "border-primary bg-primary text-primary-foreground"
-                : "text-muted-foreground",
-            )}
+            className={chip(type === t.value)}
           >
             {t.label}
           </button>
         ))}
+      </div>
+
+      <div className="-mt-1 flex flex-wrap items-center gap-2">
+        {WHEN.map((w) => (
+          <button
+            key={w.value}
+            type="button"
+            onClick={() => {
+              setWhen(w.value);
+              resetPage();
+            }}
+            className={chip(when === w.value)}
+          >
+            {w.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={cn("grid gap-2", (accounts?.length ?? 0) > 1 && "grid-cols-2")}>
+        <NativeSelect
+          aria-label="Catégorie"
+          className="h-9"
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            resetPage();
+          }}
+        >
+          <option value="">Toutes les catégories</option>
+          {(categories ?? [])
+            .filter((c) => !type || c.type === type || c.type === "both")
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+        </NativeSelect>
         {(accounts?.length ?? 0) > 1 && (
           <NativeSelect
             aria-label="Compte"
-            className="h-8 w-auto"
+            className="h-9"
             value={account}
             onChange={(e) => {
               setAccount(e.target.value);
@@ -140,21 +198,9 @@ export default function TransactionsPage() {
             ))}
           </NativeSelect>
         )}
-        <label className="text-muted-foreground ml-auto flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={!allTime}
-            onChange={(e) => {
-              setAllTime(!e.target.checked);
-              resetPage();
-            }}
-            className="accent-primary size-4"
-          />
-          Filtrer par période
-        </label>
       </div>
 
-      {!allTime && (
+      {when === "custom" && (
         <PeriodSelector
           period={range.period}
           date={range.date}

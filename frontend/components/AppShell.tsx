@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 
 import { Logo } from "@/components/Logo";
 import { OfflineBanner } from "@/components/OfflineSync";
@@ -67,7 +68,6 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const onForm = pathname.startsWith("/transactions/");
 
   return (
     <div className="flex min-h-dvh">
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
               isActive(pathname, href)
-                ? "bg-muted text-foreground font-medium"
+                ? "bg-primary/10 text-primary font-medium"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
@@ -127,31 +127,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile floating action button */}
-      {!onForm && (
-        <Link
-          href="/transactions/new"
-          aria-label="Ajouter une opération"
-          className="bg-primary text-primary-foreground fixed right-4 bottom-20 z-30 flex size-14 items-center justify-center rounded-full shadow-lg md:hidden print:hidden"
-        >
-          <Plus className="size-6" />
-        </Link>
-      )}
-
-      {/* Mobile bottom navigation */}
-      <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden">
-        {MOBILE_NAV.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex flex-col items-center gap-1 py-2.5 text-[11px]",
-              isActive(pathname, href) ? "text-foreground" : "text-muted-foreground",
+      {/* Mobile bottom navigation, with the main action ("+") in the middle. */}
+      <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden">
+        {MOBILE_NAV.map(({ href, label, icon: Icon }, index) => (
+          <Fragment key={href}>
+            {index === 2 && (
+              <div className="flex items-start justify-center">
+                <Link
+                  href="/transactions/new"
+                  aria-label="Ajouter une opération"
+                  aria-current={pathname === "/transactions/new" ? "page" : undefined}
+                  className="bg-primary text-primary-foreground ring-background -mt-5 flex size-14 items-center justify-center rounded-full shadow-lg ring-4 transition-transform active:scale-95"
+                >
+                  <Plus className="size-6" />
+                </Link>
+              </div>
             )}
-          >
-            <Icon className="size-5" />
-            {label}
-          </Link>
+            <Link
+              href={href}
+              className={cn(
+                "relative flex flex-col items-center gap-1 py-2.5 text-[11px]",
+                isActive(pathname, href) ? "text-primary font-medium" : "text-muted-foreground",
+              )}
+            >
+              <Icon className="size-5" />
+              {label}
+            </Link>
+          </Fragment>
         ))}
       </nav>
     </div>
@@ -161,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 export function PageHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center justify-between gap-3">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
       {action}
     </div>
   );

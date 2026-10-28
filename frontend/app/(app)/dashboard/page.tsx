@@ -1,49 +1,124 @@
 "use client";
 
-import { Repeat, TriangleAlert } from "lucide-react";
+import { CalendarClock, ChevronRight, Repeat, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/AppShell";
 import { BalanceCard, StatCard } from "@/components/BalanceCard";
-import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { CategoryIcon } from "@/components/CategoryBadge";
-import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
-import { ProgressBar } from "@/components/ProgressBar";
-import { TransactionList } from "@/components/TransactionList";
-import { WhatsAppReminder } from "@/components/WhatsAppVerify";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { GettingStarted } from "@/components/GettingStarted";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { TransactionList } from "@/components/TransactionList";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { WhatsAppReminder } from "@/components/WhatsAppVerify";
 import { useAuth } from "@/lib/auth";
-import { periodLabel, today } from "@/lib/dates";
-import { accountTypeIcon, formatMoney } from "@/lib/format";
-import type { PeriodStats, Summary } from "@/lib/types";
+import { parseISODate, periodLabel, today, toISODate } from "@/lib/dates";
+import { accountTypeIcon, formatMoney, formatSigned } from "@/lib/format";
+import type { RecurringRule, Summary } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
+
+const NOTICE = "flex items-center gap-3 rounded-xl border p-3 text-sm";
+
+function inDays(date: string) {
+  const days = Math.round((parseISODate(date).getTime() - parseISODate(today()).getTime()) / 864e5);
+  return days === 1 ? "demain" : `dans ${days} jours`;
+}
+
+/** Recurring operations due in the next 7 days (the ones already due are "à confirmer"). */
+function Upcoming({ currency }: { currency: string }) {
+  const { data: rules } = useApi<RecurringRule[]>("/recurring/");
+  const limit = new Date();
+  limit.setDate(limit.getDate() + 7);
+  const soon = (rules ?? [])
+    .filter(
+      (r) => r.is_active && r.next_date && r.next_date > today() && r.next_date <= toISODate(limit),
+    )
+    .sort((a, b) => a.next_date!.localeCompare(b.next_date!))
+    .slice(0, 3);
+  if (soon.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="text-muted-foreground mb-2 flex items-center gap-1.5 text-sm font-medium">
+        <CalendarClock className="size-4" /> À venir cette semaine
+      </h2>
+      <ul className="bg-card divide-y rounded-xl border">
+        {soon.map((rule) => (
+          <li key={rule.id}>
+            <Link
+              href="/recurring"
+              className="hover:bg-muted flex items-center gap-3 px-3 py-2.5 text-sm"
+            >
+              <CategoryIcon
+                icon={rule.category_detail.icon}
+                color={rule.category_detail.color}
+                className="size-8"
+              />
+              <span className="min-w-0 flex-1 truncate">
+                {rule.description || rule.category_detail.name}
+                <span className="text-muted-foreground"> · {inDays(rule.next_date!)}</span>
+              </span>
+              <span className="font-medium tabular-nums">
+                {formatSigned(rule.amount, rule.type, currency)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: summary, error } = useApi<Summary>("/stats/summary/");
-  const { data: monthStats } = useApi<PeriodStats>("/stats/period/", {
-    period: "month",
-    date: today(),
-  });
 
   if (error) return <p className="text-destructive text-sm">{error.message}</p>;
   if (!summary) return <DashboardSkeleton />;
 
   const { currency, month } = summary;
+  const alert = summary.budget_alerts[0];
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-col gap-5 duration-300">
       <PageHeader title={`Bonjour ${user?.username ?? ""}`} />
 
-      <WhatsAppReminder />
-      <InstallPrompt />
-
       <BalanceCard balance={summary.balance} currency={currency} />
 
-      <GettingStarted summary={summary} />
+      {/*
+        One message at a time, by priority: only the first one that renders is shown
+        (the components below render nothing when they have nothing to say).
+      */}
+      <div className="flex flex-col [&>*:nth-child(n+2)]:hidden">
+        {summary.pending_recurring_count > 0 && (
+          <Link
+            href="/recurring"
+            className={`${NOTICE} border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40`}
+          >
+            <Repeat className="size-4 shrink-0 text-amber-600" />
+            <span className="flex-1">
+              {summary.pending_recurring_count} opération
+              {summary.pending_recurring_count > 1 ? "s récurrentes" : " récurrente"} à confirmer
+            </span>
+            <ChevronRight className="size-4" />
+          </Link>
+        )}
+        {alert && (
+          <Link href="/budgets" className={`${NOTICE} border-expense/30 bg-expense/5`}>
+            <TriangleAlert className="text-expense size-4 shrink-0" />
+            <span className="flex-1">
+              Budget <span className="font-medium">{alert.category.name}</span> utilisé à{" "}
+              {Math.round(alert.percent)} %
+              {summary.budget_alerts.length > 1 && ` (+${summary.budget_alerts.length - 1} autre)`}
+            </span>
+            <ChevronRight className="size-4" />
+          </Link>
+        )}
+        <GettingStarted summary={summary} />
+        <WhatsAppReminder />
+        <InstallPrompt />
+      </div>
 
       {summary.accounts.length > 1 && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
@@ -65,46 +140,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {summary.pending_recurring_count > 0 && (
-        <Link
-          href="/recurring"
-          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/40"
-        >
-          <Repeat className="size-4 shrink-0 text-amber-600" />
-          <span className="flex-1">
-            {summary.pending_recurring_count} opération
-            {summary.pending_recurring_count > 1 ? "s récurrentes" : " récurrente"} à confirmer
-          </span>
-          <span className="font-medium">Voir</span>
-        </Link>
-      )}
-
-      {summary.budget_alerts.length > 0 && (
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TriangleAlert className="text-expense size-4" /> Budgets à surveiller
-            </CardTitle>
-            <Link href="/budgets" className="text-muted-foreground hover:text-foreground text-sm">
-              Gérer
-            </Link>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {summary.budget_alerts.map((alert) => (
-              <div key={alert.budget}>
-                <div className="mb-1 flex justify-between gap-2 text-sm">
-                  <span className="truncate font-medium">{alert.category.name}</span>
-                  <span className="tabular-nums">
-                    {formatMoney(alert.spent, currency)} / {formatMoney(alert.amount, currency)}
-                  </span>
-                </div>
-                <ProgressBar percent={alert.percent} tone={alert.status} />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       <section>
         <h2 className="text-muted-foreground mb-2 text-sm font-medium">
           {periodLabel(today(), "month")}
@@ -118,24 +153,12 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {monthStats && monthStats.count > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenus vs dépenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <IncomeExpenseChart stats={monthStats} height={200} />
-          </CardContent>
-        </Card>
-      )}
+      <Upcoming currency={currency} />
 
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Dernières opérations</CardTitle>
-          <Link
-            href="/transactions"
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
+          <Link href="/transactions" className="text-primary text-sm font-medium">
             Tout voir
           </Link>
         </CardHeader>
@@ -144,20 +167,12 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {summary.top_expense_categories.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Top des dépenses du mois</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CategoryBreakdown
-              shares={summary.top_expense_categories}
-              currency={currency}
-              showChart={false}
-            />
-          </CardContent>
-        </Card>
-      )}
+      <Link
+        href="/reports"
+        className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-sm"
+      >
+        Graphiques et répartition par catégorie dans Rapports <ChevronRight className="size-4" />
+      </Link>
     </div>
   );
 }

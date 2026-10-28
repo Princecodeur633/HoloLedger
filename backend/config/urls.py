@@ -24,6 +24,7 @@ router.register("recurring", RecurringRuleViewSet, basename="recurring")
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),
+    path("api/reminders/", include("reminders.urls")),
     path("api/stats/summary/", SummaryView.as_view(), name="stats-summary"),
     path("api/stats/period/", PeriodStatsView.as_view(), name="stats-period"),
     path("api/stats/categories/", CategoryStatsView.as_view(), name="stats-categories"),

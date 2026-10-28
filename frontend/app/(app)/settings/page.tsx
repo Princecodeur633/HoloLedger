@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
 import { CategoryManager } from "@/components/CategoryManager";
+import { ReminderToggle } from "@/components/ReminderToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, ApiError } from "@/lib/api";
@@ -43,6 +44,15 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ThemeToggle />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Rappel quotidien</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReminderToggle />
         </CardContent>
       </Card>
 
