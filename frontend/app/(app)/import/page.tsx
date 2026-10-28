@@ -12,7 +12,7 @@ import { TransactionForm } from "@/components/TransactionForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { formatSigned } from "@/lib/format";
@@ -39,7 +39,7 @@ const ROLES: { role: ImportRole; label: string }[] = [
 type Override = { skip?: boolean; category?: string };
 
 function errorText(err: unknown) {
-  return err instanceof ApiError ? err.message : "Impossible de contacter le serveur.";
+  return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
 function StatementImport() {

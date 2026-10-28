@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
+from django.utils import timezone
+from rest_framework import exceptions, serializers
 
 from .phone import InvalidPhone, looks_like_phone, normalize_phone
 
@@ -20,7 +23,9 @@ def clean_phone(value, region=None, exclude=None):
     if exclude is not None:
         others = others.exclude(pk=exclude.pk)
     if others.exists():
-        raise serializers.ValidationError("Ce numéro est déjà utilisé.")
+        raise serializers.ValidationError(
+            "Ce numéro a déjà un compte. Connectez-vous ou utilisez « Mot de passe oublié »."
+        )
     return phone
 
 
@@ -122,7 +127,16 @@ class PasswordResetSerializer(PhoneSerializer):
     new_password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 
+class AccountLocked(exceptions.APIException):
+    # Not a ValidationError: the serializer would turn it into a plain 400.
+    status_code = 429
+    default_code = "account_locked"
+
+
 class LoginSerializer(serializers.Serializer):
+    MAX_FAILURES = 5
+    LOCK_DURATION = timedelta(minutes=15)
+
     login = serializers.CharField(help_text="Nom d'utilisateur, téléphone ou e-mail")
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
@@ -142,8 +156,32 @@ class LoginSerializer(serializers.Serializer):
                     break
         if match:
             login = match.username
+        else:
+            match = User.objects.filter(username=login).first()
+
+        now = timezone.now()
+        if match and match.login_locked_until and match.login_locked_until > now:
+            minutes = max(1, round((match.login_locked_until - now).total_seconds() / 60))
+            raise AccountLocked(
+                f"Trop d’essais. Réessayez dans {minutes} minute{'s' if minutes > 1 else ''} "
+                "ou utilisez « Mot de passe oublié »."
+            )
+
         user = authenticate(self.context.get("request"), username=login, password=attrs["password"])
         if not user:
-            raise serializers.ValidationError("Identifiants invalides.")
+            if match:
+                match.failed_logins += 1
+                if match.failed_logins >= self.MAX_FAILURES:
+                    match.failed_logins = 0
+                    match.login_locked_until = now + self.LOCK_DURATION
+                match.save(update_fields=["failed_logins", "login_locked_until"])
+            raise serializers.ValidationError(
+                "Identifiants invalides. Vérifiez votre numéro (ou nom d’utilisateur) "
+                "et votre mot de passe."
+            )
+        if user.failed_logins or user.login_locked_until:
+            user.failed_logins = 0
+            user.login_locked_until = None
+            user.save(update_fields=["failed_logins", "login_locked_until"])
         attrs["user"] = user
         return attrs

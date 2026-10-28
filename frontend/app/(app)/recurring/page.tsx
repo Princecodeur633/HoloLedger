@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/api";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate, today } from "@/lib/dates";
 import { formatSigned, PAYMENT_METHODS, parseAmount } from "@/lib/format";
@@ -60,7 +61,7 @@ type Draft = {
 };
 
 function errorText(err: unknown) {
-  return err instanceof ApiError ? err.message : "Impossible de contacter le serveur.";
+  return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
 function PendingItem({
@@ -237,7 +238,7 @@ export default function RecurringPage() {
         </Card>
       )}
 
-      {rules === null && <p className="text-muted-foreground text-sm">Chargement…</p>}
+      {rules === null && <ListSkeleton />}
       {rules?.length === 0 && (
         <p className="text-muted-foreground py-6 text-center text-sm">
           Enregistrez une fois vos opérations régulières (loyer, salaire, abonnements) : elles

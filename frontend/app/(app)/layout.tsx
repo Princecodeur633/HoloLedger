@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AppShell } from "@/components/AppShell";
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -16,8 +17,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return (
-      <div className="text-muted-foreground flex min-h-dvh items-center justify-center text-sm">
-        Chargement…
+      <div
+        role="status"
+        aria-label="Chargement"
+        className="flex min-h-dvh items-center justify-center"
+      >
+        <Logo className="size-20 animate-pulse" priority />
       </div>
     );
   }

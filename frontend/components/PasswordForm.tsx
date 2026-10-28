@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 
 const EMPTY = { current: "", next: "", confirm: "" };
 
@@ -41,7 +41,7 @@ export function PasswordForm() {
               : err.message,
         });
       } else {
-        setErrors({ form: "Impossible de contacter le serveur." });
+        setErrors({ form: OFFLINE_MESSAGE });
       }
     } finally {
       setSaving(false);

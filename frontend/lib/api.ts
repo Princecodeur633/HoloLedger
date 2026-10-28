@@ -25,7 +25,12 @@ export class ApiError extends Error {
     public status: number,
     public data: Record<string, unknown> | null,
   ) {
-    super(ApiError.describe(data) ?? `Erreur ${status}`);
+    super(
+      ApiError.describe(data) ??
+        (status >= 500
+          ? "Le serveur a rencontré un problème. Réessayez dans un instant."
+          : `Erreur ${status}`),
+    );
   }
 
   static describe(data: Record<string, unknown> | null): string | null {
@@ -55,10 +60,13 @@ export function buildQuery(query?: Query): string {
   return qs ? `?${qs}` : "";
 }
 
+export const OFFLINE_MESSAGE =
+  "Le serveur ne répond pas. Vérifiez votre connexion internet, puis réessayez dans quelques secondes.";
+
 /** The server could not be reached (offline, DNS, server down…). */
 export class NetworkError extends Error {
   constructor() {
-    super("Impossible de contacter le serveur.");
+    super(OFFLINE_MESSAGE);
   }
 }
 

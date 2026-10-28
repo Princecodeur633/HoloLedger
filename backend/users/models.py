@@ -12,6 +12,9 @@ class User(AbstractUser):
     email = models.EmailField("adresse e-mail", unique=True, null=True, blank=True)
     phone = models.CharField("téléphone", max_length=20, unique=True, null=True, blank=True)
     whatsapp_verified_at = models.DateTimeField("WhatsApp vérifié le", null=True, blank=True)
+    # Brute-force protection: the account is locked for a while after too many wrong passwords.
+    failed_logins = models.PositiveSmallIntegerField(db_default=0)
+    login_locked_until = models.DateTimeField(null=True, blank=True)
     currency = models.CharField(max_length=3, default="XAF")
 
     created_at = models.DateTimeField(auto_now_add=True)

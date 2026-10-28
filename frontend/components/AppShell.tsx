@@ -12,11 +12,11 @@ import {
   Plus,
   Repeat,
   Settings,
-  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Logo } from "@/components/Logo";
 import { OfflineBanner } from "@/components/OfflineSync";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-1 overflow-y-auto border-r p-4 md:flex print:hidden">
         <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold">
-          <Wallet className="size-5" /> HoloLedger
+          <Logo className="size-8" priority /> HoloLedger
         </Link>
         <Link
           href="/transactions/new"

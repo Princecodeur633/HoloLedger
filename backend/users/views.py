@@ -186,7 +186,9 @@ class PasswordResetConfirmView(APIView):
         except DjangoValidationError as exc:
             raise serializers.ValidationError({"new_password": list(exc.messages)}) from None
         user.set_password(data["new_password"])
-        user.save(update_fields=["password"])
+        user.failed_logins = 0
+        user.login_locked_until = None
+        user.save(update_fields=["password", "failed_logins", "login_locked_until"])
         challenge.used_at = timezone.now()
         challenge.save(update_fields=["used_at"])
         Token.objects.filter(user=user).delete()  # log out every device that knew the old one

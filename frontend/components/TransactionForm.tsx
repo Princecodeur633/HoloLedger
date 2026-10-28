@@ -7,7 +7,8 @@ import { currencySymbol, NativeSelect, selectClass } from "@/components/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { today } from "@/lib/dates";
 import { PAYMENT_METHODS, parseAmount } from "@/lib/format";
 import type { Account, Category, TransactionInput, TransactionType } from "@/lib/types";
@@ -87,7 +88,7 @@ export function TransactionForm({
         const hasFieldError = Object.values(fieldErrors).some(Boolean);
         setErrors({ ...fieldErrors, form: hasFieldError ? undefined : err.message });
       } else {
-        setErrors({ form: "Impossible de contacter le serveur." });
+        setErrors({ form: OFFLINE_MESSAGE });
       }
     } finally {
       setSubmitting(false);
@@ -164,7 +165,11 @@ export function TransactionForm({
             </button>
           ))}
           {categories === null && (
-            <p className="text-muted-foreground col-span-3 text-sm">Chargement…</p>
+            <>
+              {Array.from({ length: 6 }, (_, i) => (
+                <Skeleton key={i} className="h-16 rounded-lg" />
+              ))}
+            </>
           )}
         </div>
         {errors.category && <p className="text-destructive text-sm">{errors.category}</p>}

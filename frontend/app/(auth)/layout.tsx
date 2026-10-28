@@ -1,9 +1,10 @@
 "use client";
 
-import { Landmark, Wallet } from "lucide-react";
+import { Landmark } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -23,9 +24,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         aria-hidden
       />
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <span className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-3xl shadow-sm">
-          <Wallet className="size-8" />
-        </span>
+        <Logo className="size-28" priority />
         <h1 className="text-3xl font-semibold tracking-tight">HoloLedger</h1>
         <p className="text-muted-foreground text-sm">Suivez votre argent, simplement.</p>
       </div>

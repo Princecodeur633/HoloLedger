@@ -72,6 +72,20 @@ class AuthTests(APITestCase):
         res = self.client.post(reverse("login"), {"login": "awa", "password": "nope"})
         self.assertEqual(res.status_code, 400)
 
+    def test_login_is_locked_after_five_failures(self):
+        self.register()
+        url = reverse("login")
+        for _ in range(5):
+            res = self.client.post(url, {"login": "061234567", "password": "nope"})
+            self.assertEqual(res.status_code, 400)
+        # Even the right password is refused while locked.
+        res = self.client.post(url, {"login": "awa", "password": "Sup3r-secret!"})
+        self.assertEqual(res.status_code, 429)
+        User.objects.update(login_locked_until=timezone.now() - timedelta(seconds=1))
+        res = self.client.post(url, {"login": "awa", "password": "Sup3r-secret!"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(User.objects.get().failed_logins, 0)
+
     def test_me_requires_auth(self):
         self.assertEqual(self.client.get(reverse("me")).status_code, 401)
 

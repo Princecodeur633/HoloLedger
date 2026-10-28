@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError } from "@/lib/api";
+import { ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { DEFAULT_COUNTRY } from "@/lib/phone";
 
 export interface AuthField {
@@ -57,7 +57,7 @@ export function AuthForm({
   }
 
   const globalError = offline
-    ? "Impossible de contacter le serveur."
+    ? OFFLINE_MESSAGE
     : error && !fields.some((f) => error.fieldError(f.name))
       ? error.message
       : null;

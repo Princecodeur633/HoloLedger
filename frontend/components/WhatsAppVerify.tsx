@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { readJSON, writeJSON } from "@/lib/storage";
 import type { User } from "@/lib/types";
@@ -47,7 +47,7 @@ export function WhatsAppVerify() {
     try {
       setLink((await api<{ url: string }>("/auth/whatsapp/verify/", { method: "POST" })).url);
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Impossible de contacter le serveur.");
+      toast.error(err instanceof ApiError ? err.message : OFFLINE_MESSAGE);
     } finally {
       setBusy(false);
     }
@@ -61,7 +61,7 @@ export function WhatsAppVerify() {
       if (me.whatsapp_verified) toast.success("Numéro WhatsApp vérifié");
       else toast.info("Message pas encore reçu. Attendez quelques secondes et réessayez.");
     } catch {
-      toast.error("Impossible de contacter le serveur.");
+      toast.error(OFFLINE_MESSAGE);
     } finally {
       setBusy(false);
     }

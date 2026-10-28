@@ -14,6 +14,7 @@ import { PeriodSelector } from "@/components/PeriodSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ListSkeleton } from "@/components/ui/skeleton";
 import { download } from "@/lib/api";
 import { periodLabel, today } from "@/lib/dates";
 import type { CategoryStats, Insights, Period, PeriodStats, TransactionType } from "@/lib/types";
@@ -120,7 +121,7 @@ export default function ReportsPage() {
           {categories && stats ? (
             <CategoryBreakdown shares={categories.categories} currency={stats.currency} />
           ) : (
-            <p className="text-muted-foreground text-sm">Chargement…</p>
+            <ListSkeleton />
           )}
         </CardContent>
       </Card>

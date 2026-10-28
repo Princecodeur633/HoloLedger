@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/api";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { periodLabel, shiftPeriod, today } from "@/lib/dates";
 import { formatMoney, parseAmount } from "@/lib/format";
@@ -63,7 +64,7 @@ export default function BudgetsPage() {
       setDraft(null);
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Impossible de contacter le serveur.");
+      setError(err instanceof ApiError ? err.message : OFFLINE_MESSAGE);
     } finally {
       setSaving(false);
     }
@@ -136,7 +137,7 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      {budgets === null && <p className="text-muted-foreground text-sm">Chargement…</p>}
+      {budgets === null && <ListSkeleton />}
       {budgets?.length === 0 && (
         <p className="text-muted-foreground py-6 text-center text-sm">
           Fixez une limite mensuelle à vos catégories de dépenses : vous serez alerté à l’approche

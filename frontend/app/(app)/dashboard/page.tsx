@@ -12,6 +12,9 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { TransactionList } from "@/components/TransactionList";
 import { WhatsAppReminder } from "@/components/WhatsAppVerify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { GettingStarted } from "@/components/GettingStarted";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { useAuth } from "@/lib/auth";
 import { periodLabel, today } from "@/lib/dates";
 import { accountTypeIcon, formatMoney } from "@/lib/format";
@@ -27,17 +30,20 @@ export default function DashboardPage() {
   });
 
   if (error) return <p className="text-destructive text-sm">{error.message}</p>;
-  if (!summary) return <p className="text-muted-foreground text-sm">Chargement…</p>;
+  if (!summary) return <DashboardSkeleton />;
 
   const { currency, month } = summary;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-col gap-5 duration-300">
       <PageHeader title={`Bonjour ${user?.username ?? ""}`} />
 
       <WhatsAppReminder />
+      <InstallPrompt />
 
       <BalanceCard balance={summary.balance} currency={currency} />
+
+      <GettingStarted summary={summary} />
 
       {summary.accounts.length > 1 && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">

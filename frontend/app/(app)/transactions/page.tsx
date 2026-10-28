@@ -10,6 +10,7 @@ import { PeriodSelector } from "@/components/PeriodSelector";
 import { TransactionList } from "@/components/TransactionList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ListSkeleton } from "@/components/ui/skeleton";
 import { download } from "@/lib/api";
 import { today } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
@@ -183,11 +184,7 @@ export default function TransactionsPage() {
       )}
 
       <div className={cn(loading && "opacity-60 transition-opacity")}>
-        {data ? (
-          <TransactionList transactions={data.results} />
-        ) : (
-          !error && <p className="text-muted-foreground text-sm">Chargement…</p>
-        )}
+        {data ? <TransactionList transactions={data.results} /> : !error && <ListSkeleton />}
       </div>
 
       {data && (data.next || data.previous) && (

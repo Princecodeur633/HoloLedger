@@ -19,7 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/api";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate, today } from "@/lib/dates";
 import { ACCOUNT_TYPES, accountTypeIcon, formatMoney, parseAmount } from "@/lib/format";
@@ -45,7 +46,7 @@ type TransferDraft = {
 };
 
 function errorText(err: unknown) {
-  return err instanceof ApiError ? err.message : "Impossible de contacter le serveur.";
+  return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
 function AccountsContent() {
@@ -261,7 +262,7 @@ function AccountsContent() {
         </CardHeader>
         <CardContent>
           {accounts === null ? (
-            <p className="text-muted-foreground text-sm">Chargement…</p>
+            <ListSkeleton />
           ) : (
             <ul className="flex flex-col gap-2">{active.map((a) => accountRow(a))}</ul>
           )}

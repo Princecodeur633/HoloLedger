@@ -9,7 +9,18 @@ class UserAdmin(BaseUserAdmin):
     list_display = ["username", "phone", "whatsapp_verified_at", "email", "is_staff", "created_at"]
     search_fields = ["username", "phone", "email"]
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("HoloLedger", {"fields": ["phone", "whatsapp_verified_at", "currency"]}),
+        (
+            "HoloLedger",
+            {
+                "fields": [
+                    "phone",
+                    "whatsapp_verified_at",
+                    "currency",
+                    "failed_logins",
+                    "login_locked_until",
+                ]
+            },
+        ),
     )
 
 

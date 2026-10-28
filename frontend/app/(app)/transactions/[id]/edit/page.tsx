@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ListSkeleton } from "@/components/ui/skeleton";
 import { api, ApiError } from "@/lib/api";
 import type { Transaction } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
@@ -53,7 +54,7 @@ export default function EditTransactionPage() {
           {error.status === 404 ? "Opération introuvable." : error.message}
         </p>
       )}
-      {!tx && !error && <p className="text-muted-foreground text-sm">Chargement…</p>}
+      {!tx && !error && <ListSkeleton />}
 
       {tx && (
         <>

@@ -1,7 +1,35 @@
+"use client";
+
 import { ArrowDownLeft, ArrowUpRight, Landmark, Scale } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+/** Rolls the displayed number to `target` (from 0 on first show), unless reduced motion is on. */
+function useCountUp(target: number, duration = 700) {
+  const [shown, setShown] = useState(0);
+  const from = useRef(0);
+
+  useEffect(() => {
+    const start = from.current;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    const began = performance.now();
+    const step = (now: number) => {
+      const t = reduce ? 1 : Math.min((now - began) / duration, 1);
+      const eased = 1 - (1 - t) ** 3;
+      const value = start + (target - start) * eased;
+      from.current = value;
+      setShown(value);
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+
+  return shown;
+}
 
 export function BalanceCard({
   balance,
@@ -13,8 +41,10 @@ export function BalanceCard({
   label?: string;
 }) {
   const negative = Number(balance) < 0;
+  const shown = useCountUp(Number(balance));
   return (
-    <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl p-6 shadow-sm">
+    // Dark mode: a dark card instead of the light "primary" one, which glares at night.
+    <div className="bg-primary text-primary-foreground dark:bg-card dark:text-card-foreground dark:ring-foreground/10 relative overflow-hidden rounded-2xl p-6 shadow-sm dark:ring-1">
       {/* Decorative bank drawn into the card background, partly cut off by the edges. */}
       <Landmark
         className="pointer-events-none absolute -right-6 -bottom-8 size-44 -rotate-6 opacity-[0.12] sm:size-52"
@@ -22,7 +52,7 @@ export function BalanceCard({
         aria-hidden
       />
       <div
-        className="bg-primary-foreground/5 pointer-events-none absolute -top-16 -right-16 size-48 rounded-full"
+        className="bg-primary-foreground/5 dark:bg-foreground/5 pointer-events-none absolute -top-16 -right-16 size-48 rounded-full"
         aria-hidden
       />
       <div className="relative min-w-0 pr-24 sm:pr-32">
@@ -30,10 +60,10 @@ export function BalanceCard({
         <p
           className={cn(
             "mt-2 text-4xl font-semibold tracking-tight tabular-nums",
-            negative && "text-red-300 dark:text-red-600",
+            negative && "text-red-300",
           )}
         >
-          {formatMoney(balance, currency)}
+          {formatMoney(shown === Number(balance) ? balance : Math.round(shown), currency)}
         </p>
       </div>
     </div>

@@ -11,12 +11,12 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { DEFAULT_COUNTRY, phoneBody, type PhoneValue } from "@/lib/phone";
 import { useWhatsAppEnabled } from "@/lib/whatsapp";
 
 function errorText(err: unknown) {
-  return err instanceof ApiError ? err.message : "Impossible de contacter le serveur.";
+  return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
 export default function ForgotPasswordPage() {

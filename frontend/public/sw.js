@@ -1,6 +1,8 @@
 /* HoloLedger service worker: offline app shell + last known API answers. */
 
-const VERSION = "v1";
+// Registered as /sw.js?v=<deployment id>: a new deployment installs a new worker and
+// the activate step below drops the previous deployment's caches.
+const VERSION = new URL(self.location.href).searchParams.get("v") || "v1";
 const SHELL_CACHE = `holoLedger-shell-${VERSION}`;
 const STATIC_CACHE = `holoLedger-static-${VERSION}`;
 const API_CACHE = "holoLedger-api"; // also cleared by the app on logout

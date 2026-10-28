@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/api";
+import { ListSkeleton, Skeleton } from "@/components/ui/skeleton";
+import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatDate, parseISODate, today } from "@/lib/dates";
 import { formatMoney, parseAmount } from "@/lib/format";
@@ -35,7 +36,7 @@ type GoalDraft = {
 type Movement = { goal: Goal; direction: 1 | -1; amount: string; note: string };
 
 function errorText(err: unknown) {
-  return err instanceof ApiError ? err.message : "Impossible de contacter le serveur.";
+  return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
 /** Monthly effort needed to reach the goal on time, or null without deadline. */
@@ -68,7 +69,7 @@ function History({
     }
   }
 
-  if (!data) return <p className="text-muted-foreground text-xs">Chargement…</p>;
+  if (!data) return <Skeleton className="h-3 w-32" />;
   if (data.length === 0) return <p className="text-muted-foreground text-xs">Aucun versement.</p>;
   return (
     <ul className="divide-y text-sm">
@@ -171,7 +172,7 @@ export default function GoalsPage() {
         }
       />
 
-      {goals === null && <p className="text-muted-foreground text-sm">Chargement…</p>}
+      {goals === null && <ListSkeleton rows={2} />}
       {goals?.length === 0 && (
         <p className="text-muted-foreground py-6 text-center text-sm">
           Créez un objectif d’épargne (moto, fonds d’urgence, rentrée scolaire…) et suivez vos
