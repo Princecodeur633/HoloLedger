@@ -154,3 +154,17 @@ CORS_ALLOWED_ORIGIN_REGEXES = env_list(
 )
 
 CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+
+
+# Numbers typed without "+<country code>" are read as numbers of this country (ISO code).
+PHONE_DEFAULT_REGION = os.getenv("PHONE_DEFAULT_REGION", "CG")
+# Countries tried, in order, when someone logs in with a number typed without "+".
+PHONE_LOGIN_REGIONS = env_list("PHONE_LOGIN_REGIONS", "CG,CD")
+
+# WhatsApp Cloud API (Meta). Leave empty to disable WhatsApp verification and password reset.
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "")
+WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET", "")
+WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+WHATSAPP_BUSINESS_NUMBER = os.getenv("WHATSAPP_BUSINESS_NUMBER", "")
+WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v23.0")

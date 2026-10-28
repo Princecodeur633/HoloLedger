@@ -14,7 +14,13 @@ interface AuthContextValue {
   /** True until the stored token has been checked against /auth/me/. */
   loading: boolean;
   login: (login: string, password: string) => Promise<void>;
-  register: (data: { username: string; email: string; password: string }) => Promise<void>;
+  register: (data: {
+    username: string;
+    phone: string;
+    phone_country: string;
+    email?: string;
+    password: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
 }

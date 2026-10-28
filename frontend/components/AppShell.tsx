@@ -21,6 +21,7 @@ import { OfflineBanner } from "@/components/OfflineSync";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useAuth } from "@/lib/auth";
+import { formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 const MAIN_NAV = [
@@ -107,7 +108,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <UserAvatar name={user.username} />
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{user.username}</span>
-                <span className="text-muted-foreground block truncate text-xs">{user.email}</span>
+                <span className="text-muted-foreground block truncate text-xs">
+                  {user.phone ? formatPhone(user.phone) : user.email}
+                </span>
               </span>
             </Link>
           )}

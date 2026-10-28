@@ -4,17 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PhoneInput } from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
+import { DEFAULT_COUNTRY } from "@/lib/phone";
 
 export interface AuthField {
   name: string;
   label: string;
+  /** "phone" renders a country picker; its country is in values[`${name}_country`]. */
   type?: string;
   autoComplete?: string;
+  optional?: boolean;
+  /** Small link or text shown on the label row (e.g. "Mot de passe oublié ?"). */
+  aside?: React.ReactNode;
 }
 
 export function AuthForm({
@@ -62,17 +68,40 @@ export function AuthForm({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {fields.map((f) => (
             <div key={f.name} className="flex flex-col gap-2">
-              <Label htmlFor={f.name}>{f.label}</Label>
-              <Input
-                id={f.name}
-                type={f.type ?? "text"}
-                autoComplete={f.autoComplete}
-                required
-                value={values[f.name] ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
-                aria-invalid={!!error?.fieldError(f.name)}
-                className="h-10"
-              />
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor={f.name}>
+                  {f.label}
+                  {f.optional && (
+                    <span className="text-muted-foreground font-normal">(facultatif)</span>
+                  )}
+                </Label>
+                {f.aside}
+              </div>
+              {f.type === "phone" ? (
+                <PhoneInput
+                  id={f.name}
+                  required={!f.optional}
+                  value={{
+                    country: values[`${f.name}_country`] ?? DEFAULT_COUNTRY,
+                    number: values[f.name] ?? "",
+                  }}
+                  onChange={({ country, number }) =>
+                    setValues((v) => ({ ...v, [f.name]: number, [`${f.name}_country`]: country }))
+                  }
+                  invalid={!!error?.fieldError(f.name)}
+                />
+              ) : (
+                <Input
+                  id={f.name}
+                  type={f.type ?? "text"}
+                  autoComplete={f.autoComplete}
+                  required={!f.optional}
+                  value={values[f.name] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                  aria-invalid={!!error?.fieldError(f.name)}
+                  className="h-10"
+                />
+              )}
               {error?.fieldError(f.name) && (
                 <p className="text-destructive text-sm">{error.fieldError(f.name)}</p>
               )}

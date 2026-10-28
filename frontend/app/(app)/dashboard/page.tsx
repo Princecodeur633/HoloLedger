@@ -10,6 +10,7 @@ import { CategoryIcon } from "@/components/CategoryBadge";
 import { IncomeExpenseChart } from "@/components/IncomeExpenseChart";
 import { ProgressBar } from "@/components/ProgressBar";
 import { TransactionList } from "@/components/TransactionList";
+import { WhatsAppReminder } from "@/components/WhatsAppVerify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 import { periodLabel, today } from "@/lib/dates";
@@ -33,6 +34,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title={`Bonjour ${user?.username ?? ""}`} />
+
+      <WhatsAppReminder />
 
       <BalanceCard balance={summary.balance} currency={currency} />
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, CircleCheck } from "lucide-react";
 import Link from "next/link";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { useAuth } from "@/lib/auth";
+import { formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 function memberSince(createdAt: string) {
@@ -23,7 +24,17 @@ export function ProfileCard({ href, className }: { href?: string; className?: st
       <UserAvatar name={user.username} className="size-14 text-lg" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-lg font-semibold">{user.username}</p>
-        <p className="text-muted-foreground truncate text-sm">{user.email}</p>
+        {user.phone && (
+          <p className="text-muted-foreground flex items-center gap-1.5 truncate text-sm">
+            {formatPhone(user.phone)}
+            {user.whatsapp_verified && (
+              <span className="text-income inline-flex items-center gap-0.5 text-xs font-medium">
+                <CircleCheck className="size-3.5" /> WhatsApp
+              </span>
+            )}
+          </p>
+        )}
+        {user.email && <p className="text-muted-foreground truncate text-sm">{user.email}</p>}
         <p className="text-muted-foreground text-xs">
           Membre depuis {memberSince(user.created_at)}
         </p>

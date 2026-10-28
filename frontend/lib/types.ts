@@ -6,7 +6,10 @@ export type PaymentMethod = "cash" | "mobile_money" | "card" | "transfer" | "oth
 export interface User {
   id: string;
   username: string;
-  email: string;
+  /** E.164, e.g. +242061234567 (null only for accounts created in the admin). */
+  phone: string | null;
+  email: string | null;
+  whatsapp_verified: boolean;
   currency: string;
   created_at: string;
 }

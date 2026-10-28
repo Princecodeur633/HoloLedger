@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { AuthForm } from "@/components/AuthForm";
 import { useAuth } from "@/lib/auth";
 
@@ -8,12 +10,20 @@ export default function LoginPage() {
   return (
     <AuthForm
       fields={[
-        { name: "login", label: "Nom d’utilisateur ou e-mail", autoComplete: "username" },
+        { name: "login", label: "Téléphone ou nom d’utilisateur", autoComplete: "username" },
         {
           name: "password",
           label: "Mot de passe",
           type: "password",
           autoComplete: "current-password",
+          aside: (
+            <Link
+              href="/forgot-password"
+              className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+            >
+              Mot de passe oublié ?
+            </Link>
+          ),
         },
       ]}
       submitLabel="Se connecter"
