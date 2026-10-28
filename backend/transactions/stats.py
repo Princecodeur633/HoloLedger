@@ -112,6 +112,7 @@ class SummaryView(APIView):
         from accounts.balances import account_balances
         from budgets.models import Budget
         from budgets.usage import OK, budget_usage
+        from debts.views import open_totals
         from recurring.services import pending_occurrences, process_due_rules
 
         user = request.user
@@ -155,6 +156,24 @@ class SummaryView(APIView):
         ]
         alerts.sort(key=lambda a: -a["percent"])
 
+        # Last month's recap, compared with the month before.
+        last_start, last_end = period_bounds("month", month_start - timedelta(days=1))
+        before_start, before_end = period_bounds("month", last_start - timedelta(days=1))
+        last_qs = qs.filter(date__range=(last_start, last_end))
+        last_totals = totals(last_qs)
+        last_top = category_breakdown(last_qs, EXPENSE)[:1]
+        last_month = {
+            "start": last_start,
+            **last_totals,
+            "previous_expense": totals(qs.filter(date__range=(before_start, before_end)))[
+                "expense"
+            ],
+            "top_category": last_top[0] if last_top else None,
+        }
+
+        # Daily total balance over the last 30 days, for the sparkline on the balance card.
+        trend = balance_history(user, today - timedelta(days=29), today, "day")
+
         return Response(
             {
                 "currency": user.currency,
@@ -166,6 +185,9 @@ class SummaryView(APIView):
                 "top_expense_categories": category_breakdown(month_qs, EXPENSE)[:5],
                 "budget_alerts": alerts,
                 "pending_recurring_count": pending_occurrences(user).count(),
+                "balance_trend": [point["balance"] for point in trend],
+                "last_month": last_month,
+                "debts": open_totals(user),
                 "recent_transactions": TransactionSerializer(
                     recent, many=True, context={"request": request}
                 ).data,

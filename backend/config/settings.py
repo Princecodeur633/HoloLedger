@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "recurring",
     "imports",
     "reminders",
+    "debts",
 ]
 
 MIDDLEWARE = [

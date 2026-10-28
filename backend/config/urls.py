@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from accounts.views import AccountViewSet, TransferViewSet
 from budgets.views import BudgetViewSet
 from categories.views import CategoryViewSet
+from debts.views import DebtPaymentViewSet, DebtViewSet
 from goals.views import GoalContributionViewSet, GoalViewSet
 from imports.views import CommitView, PreviewView, SmsView
 from recurring.views import RecurringRuleViewSet
@@ -20,6 +21,8 @@ router.register("budgets", BudgetViewSet, basename="budget")
 router.register("goals", GoalViewSet, basename="goal")
 router.register("goal-contributions", GoalContributionViewSet, basename="goal-contribution")
 router.register("recurring", RecurringRuleViewSet, basename="recurring")
+router.register("debts", DebtViewSet, basename="debt")
+router.register("debt-payments", DebtPaymentViewSet, basename="debt-payment")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
