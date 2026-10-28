@@ -26,6 +26,12 @@ class ScheduleTests(TestCase):
         self.assertEqual(rule.occurrence_after(date(2026, 2, 28)), date(2026, 3, 31))
         self.assertEqual(rule.occurrence_after(date(2026, 12, 31)), date(2027, 1, 31))
 
+    def test_daily(self):
+        rule = self.rule(frequency="daily", interval=1, start_date=date(2026, 2, 28))
+        self.assertEqual(rule.occurrence_after(date(2026, 2, 28)), date(2026, 3, 1))
+        rule = self.rule(frequency="daily", interval=3, start_date=date(2026, 10, 30))
+        self.assertEqual(rule.occurrence_after(date(2026, 10, 30)), date(2026, 11, 2))
+
     def test_weekly_and_yearly(self):
         rule = self.rule(frequency="weekly", interval=2, start_date=date(2026, 10, 5))
         self.assertEqual(rule.occurrence_after(date(2026, 10, 5)), date(2026, 10, 19))
@@ -115,3 +121,19 @@ class RecurringApiTests(APITestCase):
             },
         )
         self.assertEqual(res.status_code, 400)
+
+    def test_daily_auto_rule_and_skipping_ahead(self):
+        """A daily expense can be cancelled for a coming day before it is created."""
+        rule = self.create(
+            frequency="daily",
+            auto_confirm=True,
+            start_date=str(self.today - timedelta(days=2)),
+            amount="500",
+        )
+        self.client.get("/api/recurring/pending/")
+        self.assertEqual(Transaction.objects.filter(recurring_rule_id=rule["id"]).count(), 3)
+
+        # Tomorrow's occurrence is skipped in advance: it is never created.
+        res = self.client.post(f"/api/recurring/{rule['id']}/skip/")
+        self.assertEqual(res.data["next_date"], str(self.today + timedelta(days=2)))
+

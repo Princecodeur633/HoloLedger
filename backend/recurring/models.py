@@ -12,6 +12,7 @@ class RecurringRule(models.Model):
     """Template for an operation that comes back regularly (rent, salary, subscriptions…)."""
 
     class Frequency(models.TextChoices):
+        DAILY = "daily", "Chaque jour"
         WEEKLY = "weekly", "Chaque semaine"
         MONTHLY = "monthly", "Chaque mois"
         YEARLY = "yearly", "Chaque année"
@@ -36,6 +37,7 @@ class RecurringRule(models.Model):
     interval = models.PositiveSmallIntegerField(default=1)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
+    # "Repeat every `interval` days/weeks/months/years": 1 = each time, 2 = every other one…
     # Next occurrence not yet created or skipped. None once the rule is finished.
     next_date = models.DateField(null=True, blank=True)
     # True: created automatically when due. False: shown as "à confirmer".
@@ -51,6 +53,8 @@ class RecurringRule(models.Model):
 
     def occurrence_after(self, current):
         """Next date after `current`, keeping the day of `start_date` (clamped to month end)."""
+        if self.frequency == self.Frequency.DAILY:
+            return current + timedelta(days=self.interval)
         if self.frequency == self.Frequency.WEEKLY:
             return current + timedelta(weeks=self.interval)
         months = self.interval if self.frequency == self.Frequency.MONTHLY else 12 * self.interval
