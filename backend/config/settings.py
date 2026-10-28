@@ -24,7 +24,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-only-change-me")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,.vercel.app")
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS",
+    "localhost,127.0.0.1,",)
 
 
 INSTALLED_APPS = [
@@ -143,5 +144,13 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+
+# Vercel gives every frontend deployment its own URL (holo-ledger-<hash>-<team>.vercel.app),
+# so those are matched by pattern instead of being listed one by one. The team suffix keeps
+# other people's "holo-ledger-*" projects out; add the production domain to CORS_ALLOWED_ORIGINS.
+CORS_ALLOWED_ORIGIN_REGEXES = env_list(
+    "CORS_ALLOWED_ORIGIN_REGEXES",
+    r"^https://holo-ledger(-[a-z0-9]+)*-princecodeur634\.vercel\.app$",
+)
 
 CORS_EXPOSE_HEADERS = ["Content-Disposition"]
