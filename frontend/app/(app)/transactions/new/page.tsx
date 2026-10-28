@@ -28,6 +28,7 @@ export default function NewTransactionPage() {
   async function save(data: TransactionInput) {
     try {
       const tx = await api<Transaction>("/transactions/", { method: "POST", body: data });
+      navigator.vibrate?.(20);
       toast.success(tx.type === "income" ? "Revenu enregistré" : "Dépense enregistrée");
     } catch (err) {
       if (!(err instanceof NetworkError)) throw err;

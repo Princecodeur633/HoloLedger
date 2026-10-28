@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowDownLeft, ArrowUpRight, Landmark, Scale } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, Landmark, Scale } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { formatMoney } from "@/lib/format";
+import { MASK, toggleHidden, useHidden } from "@/lib/privacy";
 import { cn } from "@/lib/utils";
 
 /** Rolls the displayed number to `target` (from 0 on first show), unless reduced motion is on. */
@@ -53,17 +54,49 @@ function MainAmount({ text, className }: { text: string; className?: string }) {
   );
 }
 
+/** Discreet 30-day trend line (no axes, no numbers): only the direction matters. */
+function Sparkline({ points }: { points: number[] }) {
+  if (points.length < 2) return null;
+  const min = Math.min(...points);
+  const range = Math.max(...points) - min || 1;
+  const path = points
+    .map((v, i) => `${(i / (points.length - 1)) * 100},${28 - ((v - min) / range) * 24}`)
+    .join(" ");
+  return (
+    <svg
+      viewBox="0 0 100 30"
+      preserveAspectRatio="none"
+      aria-hidden
+      className="mt-4 h-8 w-full overflow-visible opacity-60"
+    >
+      <polyline
+        points={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 export function BalanceCard({
   balance,
   currency,
   label = "Solde actuel",
+  trend,
 }: {
   balance: string;
   currency: string;
   label?: string;
+  /** Balance at the end of each of the last days, oldest first. */
+  trend?: string[];
 }) {
   const negative = Number(balance) < 0;
   const shown = useCountUp(Number(balance));
+  const hidden = useHidden();
   return (
     // Dark mode: a dark card instead of the light "primary" one, which glares at night.
     <div className="bg-foreground text-background dark:bg-card dark:text-card-foreground dark:ring-foreground/10 relative overflow-hidden rounded-2xl p-6 shadow-sm dark:ring-1">
@@ -78,12 +111,27 @@ export function BalanceCard({
         aria-hidden
       />
       <div className="relative min-w-0 pr-10 sm:pr-24">
-        <p className="text-sm opacity-70">{label}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm opacity-70">{label}</p>
+          <button
+            type="button"
+            onClick={toggleHidden}
+            aria-label={hidden ? "Afficher les montants" : "Masquer les montants"}
+            className="rounded-full p-1 opacity-70 transition-opacity hover:opacity-100"
+          >
+            {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         <MainAmount
-          text={formatMoney(shown === Number(balance) ? balance : Math.round(shown), currency)}
-          className={cn(negative && "text-red-300")}
+          text={
+            hidden
+              ? `${MASK} ${formatMoney(0, currency).replace(/[\d\s.,]/g, "")}`
+              : formatMoney(shown === Number(balance) ? balance : Math.round(shown), currency)
+          }
+          className={cn(negative && !hidden && "text-red-300")}
         />
       </div>
+      {trend && <Sparkline points={trend.map(Number)} />}
     </div>
   );
 }
@@ -114,9 +162,13 @@ export function StatCard({
   variant: keyof typeof VARIANTS;
 }) {
   const { icon: Icon, className, card } = VARIANTS[variant];
+  const hidden = useHidden();
   const n = Number(value);
-  const display =
-    variant === "net" && n > 0 ? `+${formatMoney(value, currency)}` : formatMoney(value, currency);
+  const display = hidden
+    ? MASK
+    : variant === "net" && n > 0
+      ? `+${formatMoney(value, currency)}`
+      : formatMoney(value, currency);
   return (
     <div className={cn("flex min-w-0 flex-col gap-2 rounded-xl border p-3", card)}>
       <div className="flex items-center gap-2">

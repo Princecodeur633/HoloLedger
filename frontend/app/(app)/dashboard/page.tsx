@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, ChevronRight, Repeat, TriangleAlert } from "lucide-react";
+import { CalendarClock, ChevronRight, HandCoins, Repeat, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/AppShell";
@@ -8,6 +8,7 @@ import { BalanceCard, StatCard } from "@/components/BalanceCard";
 import { CategoryIcon } from "@/components/CategoryBadge";
 import { GettingStarted } from "@/components/GettingStarted";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { MonthlyRecap } from "@/components/MonthlyRecap";
 import { TransactionList } from "@/components/TransactionList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ import { WhatsAppReminder } from "@/components/WhatsAppVerify";
 import { useAuth } from "@/lib/auth";
 import { parseISODate, periodLabel, today, toISODate } from "@/lib/dates";
 import { accountTypeIcon, formatMoney, formatSigned } from "@/lib/format";
+import { MASK, useHidden } from "@/lib/privacy";
 import type { RecurringRule, Summary } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 
@@ -28,6 +30,7 @@ function inDays(date: string) {
 /** Recurring operations due in the next 7 days (the ones already due are "à confirmer"). */
 function Upcoming({ currency }: { currency: string }) {
   const { data: rules } = useApi<RecurringRule[]>("/recurring/");
+  const hidden = useHidden();
   const limit = new Date();
   limit.setDate(limit.getDate() + 7);
   const soon = (rules ?? [])
@@ -60,7 +63,7 @@ function Upcoming({ currency }: { currency: string }) {
                 <span className="text-muted-foreground"> · {inDays(rule.next_date!)}</span>
               </span>
               <span className="font-medium tabular-nums">
-                {formatSigned(rule.amount, rule.type, currency)}
+                {hidden ? MASK : formatSigned(rule.amount, rule.type, currency)}
               </span>
             </Link>
           </li>
@@ -73,18 +76,20 @@ function Upcoming({ currency }: { currency: string }) {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: summary, error } = useApi<Summary>("/stats/summary/");
+  const hidden = useHidden();
 
   if (error) return <p className="text-destructive text-sm">{error.message}</p>;
   if (!summary) return <DashboardSkeleton />;
 
-  const { currency, month } = summary;
+  const { currency, month, debts } = summary;
+  const money = (v: string | number) => (hidden ? MASK : formatMoney(v, currency));
   const alert = summary.budget_alerts[0];
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-col gap-5 duration-300">
       <PageHeader title={`Bonjour ${user?.username ?? ""}`} />
 
-      <BalanceCard balance={summary.balance} currency={currency} />
+      <BalanceCard balance={summary.balance} currency={currency} trend={summary.balance_trend} />
 
       {/*
         One message at a time, by priority: only the first one that renders is shown
@@ -115,6 +120,7 @@ export default function DashboardPage() {
             <ChevronRight className="size-4" />
           </Link>
         )}
+        <MonthlyRecap summary={summary} />
         <GettingStarted summary={summary} />
         <WhatsAppReminder />
         <InstallPrompt />
@@ -131,9 +137,7 @@ export default function DashboardPage() {
               <CategoryIcon icon={accountTypeIcon(a.type)} color={a.color} className="size-8" />
               <span className="min-w-0">
                 <span className="text-muted-foreground block truncate text-xs">{a.name}</span>
-                <span className="block text-sm font-semibold tabular-nums">
-                  {formatMoney(a.balance, currency)}
-                </span>
+                <span className="block text-sm font-semibold tabular-nums">{money(a.balance)}</span>
               </span>
             </Link>
           ))}
@@ -152,6 +156,34 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {(Number(debts.owed_to_me) > 0 || Number(debts.i_owe) > 0) && (
+        <Link
+          href="/debts"
+          className="bg-card hover:bg-muted flex items-center gap-3 rounded-xl border p-3 text-sm transition-colors"
+        >
+          <HandCoins className="text-muted-foreground size-5 shrink-0" />
+          <span className="flex flex-1 flex-wrap gap-x-4 gap-y-1">
+            {Number(debts.owed_to_me) > 0 && (
+              <span>
+                On me doit{" "}
+                <span className="text-income font-semibold tabular-nums">
+                  {money(debts.owed_to_me)}
+                </span>
+              </span>
+            )}
+            {Number(debts.i_owe) > 0 && (
+              <span>
+                Je dois{" "}
+                <span className="text-expense font-semibold tabular-nums">
+                  {money(debts.i_owe)}
+                </span>
+              </span>
+            )}
+          </span>
+          <ChevronRight className="text-muted-foreground size-4" />
+        </Link>
+      )}
 
       <Upcoming currency={currency} />
 

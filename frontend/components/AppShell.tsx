@@ -5,6 +5,7 @@ import {
   Ellipsis,
   FileUp,
   Goal,
+  HandCoins,
   History,
   Landmark,
   LayoutDashboard,
@@ -36,6 +37,12 @@ export const MORE_NAV = [
   { href: "/accounts", label: "Comptes", icon: Landmark, description: "Soldes et transferts" },
   { href: "/budgets", label: "Budgets", icon: PiggyBank, description: "Limites mensuelles" },
   { href: "/goals", label: "Objectifs", icon: Goal, description: "Épargne" },
+  {
+    href: "/debts",
+    label: "Dettes et prêts",
+    icon: HandCoins,
+    description: "Qui me doit, à qui je dois",
+  },
   {
     href: "/recurring",
     label: "Récurrentes",

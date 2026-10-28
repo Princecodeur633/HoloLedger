@@ -1,3 +1,5 @@
+"use client";
+
 import { Receipt, Repeat } from "lucide-react";
 import Link from "next/link";
 
@@ -5,11 +7,13 @@ import { CategoryIcon } from "@/components/CategoryBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { formatDayHeading } from "@/lib/dates";
 import { formatSigned, paymentMethodLabel } from "@/lib/format";
+import { MASK, useHidden } from "@/lib/privacy";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function TransactionRow({ tx }: { tx: Transaction }) {
   const category = tx.category_detail;
+  const hidden = useHidden();
   return (
     <Link
       href={`/transactions/${tx.id}/edit`}
@@ -29,7 +33,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
           tx.type === "income" ? "text-income" : "text-foreground",
         )}
       >
-        {formatSigned(tx.amount, tx.type, tx.currency)}
+        {hidden ? MASK : formatSigned(tx.amount, tx.type, tx.currency)}
       </span>
     </Link>
   );

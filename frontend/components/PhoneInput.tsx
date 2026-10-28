@@ -23,7 +23,7 @@ export function PhoneInput({
   return (
     <div className="flex gap-2">
       {/* Compact face (flag + code); the transparent native select on top keeps the phone's own picker. */}
-      <div className="border-input dark:bg-input/30 relative flex h-10 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-sm has-focus-visible:ring-3 has-focus-visible:ring-ring/50">
+      <div className="border-input dark:bg-input/30 has-focus-visible:ring-ring/50 relative flex h-10 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-sm has-focus-visible:ring-3">
         <span aria-hidden>{country.flag}</span>
         <span className="tabular-nums">{country.dial}</span>
         <ChevronDown className="text-muted-foreground size-3.5" aria-hidden />

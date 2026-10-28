@@ -85,6 +85,14 @@ export interface Summary {
   top_expense_categories: CategoryShare[];
   budget_alerts: BudgetAlert[];
   pending_recurring_count: number;
+  /** Total balance at the end of each of the last 30 days. */
+  balance_trend: Decimal[];
+  last_month: Totals & {
+    start: string;
+    previous_expense: Decimal;
+    top_category: CategoryShare | null;
+  };
+  debts: { owed_to_me: Decimal; i_owe: Decimal };
   recent_transactions: Transaction[];
 }
 
@@ -266,4 +274,29 @@ export interface SmsParse {
   operator: "mtn" | "orange" | null;
   suggested_account: string | null;
   suggested_category: string | null;
+}
+
+export type DebtDirection = "lent" | "borrowed";
+
+export interface DebtPayment {
+  id: string;
+  amount: Decimal;
+  date: string;
+  created_at: string;
+}
+
+export interface Debt {
+  id: string;
+  direction: DebtDirection;
+  person: string;
+  amount: Decimal;
+  description: string;
+  date: string;
+  due_date: string | null;
+  repaid: Decimal;
+  remaining: Decimal;
+  percent: number;
+  settled: boolean;
+  payments: DebtPayment[];
+  created_at: string;
 }
