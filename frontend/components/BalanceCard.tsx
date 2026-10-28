@@ -31,6 +31,28 @@ function useCountUp(target: number, duration = 700) {
   return shown;
 }
 
+/**
+ * The headline amount: large, heavy digits with the currency kept smaller beside them.
+ * The size follows the screen width so a long balance still fits on one line on a phone.
+ */
+function MainAmount({ text, className }: { text: string; className?: string }) {
+  const match = /^(.*\d)\s*(\D*)$/.exec(text);
+  const [digits, unit] = match ? [match[1], match[2]] : [text, ""];
+  return (
+    <p
+      className={cn(
+        "mt-2 flex flex-wrap items-baseline gap-x-2 leading-none tabular-nums",
+        className,
+      )}
+    >
+      <span className="text-[clamp(2.25rem,11vw,3.5rem)] font-extrabold tracking-tight">
+        {digits}
+      </span>
+      {unit && <span className="text-lg font-semibold opacity-75 sm:text-xl">{unit}</span>}
+    </p>
+  );
+}
+
 export function BalanceCard({
   balance,
   currency,
@@ -55,16 +77,12 @@ export function BalanceCard({
         className="bg-primary-foreground/5 dark:bg-foreground/5 pointer-events-none absolute -top-16 -right-16 size-48 rounded-full"
         aria-hidden
       />
-      <div className="relative min-w-0 pr-24 sm:pr-32">
+      <div className="relative min-w-0 pr-10 sm:pr-24">
         <p className="text-sm opacity-70">{label}</p>
-        <p
-          className={cn(
-            "mt-2 text-4xl font-semibold tracking-tight tabular-nums",
-            negative && "text-red-300",
-          )}
-        >
-          {formatMoney(shown === Number(balance) ? balance : Math.round(shown), currency)}
-        </p>
+        <MainAmount
+          text={formatMoney(shown === Number(balance) ? balance : Math.round(shown), currency)}
+          className={cn(negative && "text-red-300")}
+        />
       </div>
     </div>
   );

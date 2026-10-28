@@ -133,6 +133,19 @@
   html {
     @apply font-sans;
   }
+  /* Lets the browser draw native controls (date pickers, dropdown lists) in the current theme. */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+  /* Native <select> lists otherwise mix the page's text color with the system's background. */
+  select option,
+  select optgroup {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
 }
 
 /* "PDF" export = browser print: keep colors and avoid cutting cards in half. */

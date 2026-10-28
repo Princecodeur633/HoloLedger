@@ -193,7 +193,7 @@ export interface GoalContribution {
   created_at: string;
 }
 
-export type Frequency = "weekly" | "monthly" | "yearly";
+export type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
 export interface RecurringRule {
   id: string;

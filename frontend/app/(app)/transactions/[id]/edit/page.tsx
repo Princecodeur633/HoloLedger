@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Trash2 } from "lucide-react";
+import { ChevronLeft, Repeat, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -58,6 +58,32 @@ export default function EditTransactionPage() {
 
       {tx && (
         <>
+          {tx.recurring_rule && (
+            <div className="bg-muted mb-4 flex flex-col gap-3 rounded-xl p-4 text-sm">
+              <p className="flex items-start gap-2">
+                <Repeat className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  Cette opération vient d’une opération récurrente. Si le montant était différent,
+                  corrigez-le ci-dessous. Si vous ne l’avez pas faite ce jour-là, annulez-la : elle
+                  disparaîtra de l’historique et du solde.
+                </span>
+              </p>
+              <Button
+                variant="outline"
+                className="self-start"
+                onClick={() => {
+                  if (
+                    window.confirm("Annuler cette opération ? Elle sera retirée de l’historique.")
+                  )
+                    handleDelete();
+                }}
+              >
+                {tx.type === "expense"
+                  ? "Je n’ai pas fait cette dépense"
+                  : "Je n’ai pas reçu ce revenu"}
+              </Button>
+            </div>
+          )}
           <TransactionForm
             key={tx.id}
             currency={tx.currency}

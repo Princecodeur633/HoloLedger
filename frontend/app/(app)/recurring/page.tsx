@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, SkipForward, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -30,19 +30,17 @@ import type {
   RecurringRule,
   TransactionType,
 } from "@/lib/types";
+import { FREQUENCIES, lastOccurrence, scheduleLabel, scheduleSummary } from "@/lib/recurrence";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
-const FREQUENCIES: { value: Frequency; label: string; plural: string }[] = [
-  { value: "weekly", label: "Chaque semaine", plural: "semaines" },
-  { value: "monthly", label: "Chaque mois", plural: "mois" },
-  { value: "yearly", label: "Chaque année", plural: "ans" },
-];
+type EndMode = "never" | "date" | "count";
 
-function scheduleLabel(rule: Pick<RecurringRule, "frequency" | "interval">) {
-  const f = FREQUENCIES.find((x) => x.value === rule.frequency)!;
-  return rule.interval === 1 ? f.label : `Tous les ${rule.interval} ${f.plural}`;
-}
+const END_MODES: { value: EndMode; label: string }[] = [
+  { value: "never", label: "Jamais" },
+  { value: "date", label: "À une date" },
+  { value: "count", label: "Après N fois" },
+];
 
 type Draft = {
   id?: string;
@@ -55,10 +53,20 @@ type Draft = {
   frequency: Frequency;
   interval: string;
   start_date: string;
+  end_mode: EndMode;
   end_date: string;
+  count: string;
   auto_confirm: boolean;
   is_active: boolean;
 };
+
+/** End date sent to the API for the chosen "Se termine" option. */
+function draftEndDate(d: Draft): string | null {
+  if (d.end_mode === "date") return d.end_date || null;
+  if (d.end_mode === "count" && Number(d.count) >= 1 && d.start_date)
+    return lastOccurrence(d.start_date, d.frequency, Number(d.interval) || 1, Number(d.count));
+  return null;
+}
 
 function errorText(err: unknown) {
   return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
@@ -83,7 +91,11 @@ function PendingItem({
         method: "POST",
         body: action === "confirm" ? { amount: parseAmount(amount) } : {},
       });
-      toast.success(action === "confirm" ? "Opération enregistrée" : "Échéance ignorée");
+      toast.success(
+        action === "confirm"
+          ? "Opération enregistrée"
+          : "Échéance annulée : rien n’a été enregistré",
+      );
       onDone();
     } catch (err) {
       toast.error(errorText(err));
@@ -103,6 +115,9 @@ function PendingItem({
           </p>
         </div>
       </div>
+      <p className="text-muted-foreground text-xs">
+        Montant réel (modifiable s’il est différent) :
+      </p>
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <MoneyInput
@@ -115,8 +130,13 @@ function PendingItem({
         <Button onClick={() => act("confirm")} disabled={busy}>
           Confirmer
         </Button>
-        <Button variant="ghost" onClick={() => act("skip")} disabled={busy}>
-          Ignorer
+        <Button
+          variant="ghost"
+          onClick={() => act("skip")}
+          disabled={busy}
+          title="Je n’ai pas fait cette opération ce jour-là"
+        >
+          Pas fait
         </Button>
       </div>
     </li>
@@ -151,6 +171,7 @@ export default function RecurringPage() {
     if (!draft) return;
     setSaving(true);
     setError(null);
+    // end_mode / count are form-only: the API ignores unknown fields and gets end_date instead.
     const { id, ...body } = draft;
     try {
       await api(id ? `/recurring/${id}/` : "/recurring/", {
@@ -159,7 +180,7 @@ export default function RecurringPage() {
           ...body,
           amount: parseAmount(body.amount),
           interval: Number(body.interval) || 1,
-          end_date: body.end_date || null,
+          end_date: draftEndDate(draft),
           ...(body.account ? {} : { account: undefined }),
         },
       });
@@ -170,6 +191,20 @@ export default function RecurringPage() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function skipNext(rule: RecurringRule) {
+    if (!rule.next_date) return;
+    const day = formatDate(rule.next_date);
+    if (!window.confirm(`Annuler l’échéance du ${day} ? Rien ne sera enregistré ce jour-là.`))
+      return;
+    try {
+      await api(`/recurring/${rule.id}/skip/`, { method: "POST" });
+      toast.success(`Échéance du ${day} annulée`);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
     }
   }
 
@@ -198,7 +233,9 @@ export default function RecurringPage() {
       frequency: "monthly",
       interval: "1",
       start_date: today(),
+      end_mode: "never",
       end_date: "",
+      count: "",
       auto_confirm: false,
       is_active: true,
     });
@@ -276,6 +313,17 @@ export default function RecurringPage() {
             >
               {formatSigned(rule.amount, rule.type, currency)}
             </span>
+            {rule.next_date && rule.is_active && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Annuler la prochaine échéance"
+                title="Annuler la prochaine échéance (pas faite)"
+                onClick={() => skipNext(rule)}
+              >
+                <SkipForward />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-sm"
@@ -293,7 +341,9 @@ export default function RecurringPage() {
                   frequency: rule.frequency,
                   interval: String(rule.interval),
                   start_date: rule.start_date,
+                  end_mode: rule.end_date ? "date" : "never",
                   end_date: rule.end_date ?? "",
+                  count: "",
                   auto_confirm: rule.auto_confirm,
                   is_active: rule.is_active,
                 });
@@ -412,58 +462,96 @@ export default function RecurringPage() {
                   </NativeSelect>
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Fréquence" htmlFor="r-freq">
+              <Field label="Répéter tous les" htmlFor="r-interval">
+                <div className="flex gap-2">
+                  <Input
+                    id="r-interval"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={52}
+                    value={draft.interval}
+                    onChange={(e) => setDraft({ ...draft, interval: e.target.value })}
+                    className="h-10 w-20"
+                  />
                   <NativeSelect
-                    id="r-freq"
+                    aria-label="Unité"
                     value={draft.frequency}
                     onChange={(e) => setDraft({ ...draft, frequency: e.target.value as Frequency })}
                   >
                     {FREQUENCIES.map((f) => (
                       <option key={f.value} value={f.value}>
-                        {f.label}
+                        {Number(draft.interval) > 1 ? f.many : f.one}
                       </option>
                     ))}
                   </NativeSelect>
-                </Field>
-                <Field
-                  label="Intervalle"
-                  htmlFor="r-interval"
-                  hint="1 = à chaque fois, 2 = une fois sur deux…"
-                >
+                </div>
+              </Field>
+              <Field label="Première échéance" htmlFor="r-start">
+                <Input
+                  id="r-start"
+                  type="date"
+                  required
+                  value={draft.start_date}
+                  onChange={(e) => setDraft({ ...draft, start_date: e.target.value })}
+                  className="h-10"
+                />
+              </Field>
+              <Field label="Se termine">
+                <div className="bg-muted grid grid-cols-3 gap-1 rounded-lg p-1">
+                  {END_MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, end_mode: m.value })}
+                      className={cn(
+                        "rounded-md py-1.5 text-sm",
+                        draft.end_mode === m.value
+                          ? "bg-background font-medium shadow-sm"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {draft.end_mode === "date" && (
                   <Input
-                    id="r-interval"
-                    type="number"
-                    min={1}
-                    max={52}
-                    value={draft.interval}
-                    onChange={(e) => setDraft({ ...draft, interval: e.target.value })}
-                    className="h-10"
-                  />
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Première échéance" htmlFor="r-start">
-                  <Input
-                    id="r-start"
+                    aria-label="Date de fin"
                     type="date"
                     required
-                    value={draft.start_date}
-                    onChange={(e) => setDraft({ ...draft, start_date: e.target.value })}
-                    className="h-10"
-                  />
-                </Field>
-                <Field label="Fin (facultatif)" htmlFor="r-end">
-                  <Input
-                    id="r-end"
-                    type="date"
                     min={draft.start_date}
                     value={draft.end_date}
                     onChange={(e) => setDraft({ ...draft, end_date: e.target.value })}
                     className="h-10"
                   />
-                </Field>
-              </div>
+                )}
+                {draft.end_mode === "count" && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Input
+                      aria-label="Nombre de fois"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={1000}
+                      required
+                      placeholder="Ex : 30"
+                      value={draft.count}
+                      onChange={(e) => setDraft({ ...draft, count: e.target.value })}
+                      className="h-10 w-24"
+                    />
+                    fois
+                  </div>
+                )}
+              </Field>
+              <p className="bg-muted rounded-lg px-3 py-2 text-sm">
+                {scheduleSummary(
+                  draft.frequency,
+                  Number(draft.interval) || 1,
+                  draft.start_date,
+                  draftEndDate(draft),
+                )}
+              </p>
               <label className="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"

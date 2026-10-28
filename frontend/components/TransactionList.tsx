@@ -1,4 +1,4 @@
-import { Receipt } from "lucide-react";
+import { Receipt, Repeat } from "lucide-react";
 import Link from "next/link";
 
 import { CategoryIcon } from "@/components/CategoryBadge";
@@ -18,7 +18,8 @@ function TransactionRow({ tx }: { tx: Transaction }) {
       <CategoryIcon icon={category.icon} color={category.color} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{tx.description || category.name}</p>
-        <p className="text-muted-foreground truncate text-xs">
+        <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
+          {tx.recurring_rule && <Repeat className="size-3 shrink-0" aria-label="Récurrente" />}
           {category.name} · {paymentMethodLabel(tx.payment_method)}
         </p>
       </div>
