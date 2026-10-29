@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookOpen,
   ChartPie,
   Ellipsis,
   FileUp,
@@ -50,6 +51,7 @@ export const MORE_NAV = [
     description: "Loyer, salaire, abonnements",
   },
   { href: "/import", label: "Importer", icon: FileUp, description: "Relevé bancaire, SMS" },
+  { href: "/guide", label: "Guide", icon: BookOpen, description: "Comment utiliser l’app" },
   {
     href: "/settings",
     label: "Paramètres",

@@ -23,6 +23,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Declares that the app handles both themes itself, so browsers with a "force dark pages"
+  // option (Opera, Samsung Internet, Chrome flag) leave it alone and the device setting wins.
+  colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },

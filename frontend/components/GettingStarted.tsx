@@ -43,7 +43,10 @@ export function GettingStarted({ summary }: { summary: Summary }) {
         <div>
           <p className="font-semibold">Bien démarrer</p>
           <p className="text-muted-foreground text-xs">
-            {doneCount} sur {steps.length} étapes terminées
+            {doneCount} sur {steps.length} étapes terminées ·{" "}
+            <Link href="/guide" className="underline underline-offset-2">
+              voir le guide
+            </Link>
           </p>
         </div>
         <Button

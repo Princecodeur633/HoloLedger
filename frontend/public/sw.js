@@ -15,6 +15,7 @@ const SHELL_PAGES = [
   "/transactions/new",
   "/reports",
   "/more",
+  "/guide",
 ];
 
 self.addEventListener("install", (event) => {

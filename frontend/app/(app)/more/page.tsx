@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { MORE_NAV, PageHeader } from "@/components/AppShell";
 import { ProfileCard } from "@/components/ProfileCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function MorePage() {
   return (
@@ -27,6 +28,10 @@ export default function MorePage() {
           </li>
         ))}
       </ul>
+      <div className="mt-5">
+        <p className="text-muted-foreground mb-2 text-sm">Apparence</p>
+        <ThemeToggle />
+      </div>
     </div>
   );
 }
