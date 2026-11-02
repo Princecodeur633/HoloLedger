@@ -6,6 +6,8 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from spaces.scoping import SpaceScopedMixin
+
 from .models import Debt, DebtPayment
 from .serializers import DebtPaymentSerializer, DebtSerializer
 
@@ -16,26 +18,23 @@ def with_repaid(queryset):
     return queryset.annotate(repaid=Coalesce(Sum("payments__amount"), ZERO))
 
 
-def open_totals(user):
+def open_totals(space):
     """Remaining amounts still owed, by direction (used by the dashboard)."""
     totals = {Debt.Direction.LENT: Decimal("0"), Debt.Direction.BORROWED: Decimal("0")}
-    for debt in with_repaid(Debt.objects.filter(user=user)):
+    for debt in with_repaid(Debt.objects.filter(space=space)):
         totals[debt.direction] += max(debt.amount - debt.repaid, Decimal("0"))
     return {"owed_to_me": totals[Debt.Direction.LENT], "i_owe": totals[Debt.Direction.BORROWED]}
 
 
-class DebtViewSet(viewsets.ModelViewSet):
+class DebtViewSet(SpaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = DebtSerializer
     pagination_class = None
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return with_repaid(Debt.objects.filter(user=self.request.user)).prefetch_related(
+        return with_repaid(Debt.objects.filter(space=self.get_space())).prefetch_related(
             "payments"
         )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=["post"])
     def payments(self, request, pk=None):
@@ -52,10 +51,10 @@ class DebtViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(self.get_object()).data, status=status.HTTP_201_CREATED)
 
 
-class DebtPaymentViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class DebtPaymentViewSet(SpaceScopedMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """Only deletion (to undo a mistake): repayments are created through /debts/{id}/payments/."""
 
     serializer_class = DebtPaymentSerializer
 
     def get_queryset(self):
-        return DebtPayment.objects.filter(debt__user=self.request.user)
+        return DebtPayment.objects.filter(debt__space=self.get_space())

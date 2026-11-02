@@ -7,25 +7,24 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from spaces.scoping import SpaceScopedMixin
+
 from .models import Goal, GoalContribution
 from .serializers import GoalContributionSerializer, GoalSerializer
 
 
-class GoalViewSet(viewsets.ModelViewSet):
+class GoalViewSet(SpaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = GoalSerializer
     pagination_class = None
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return Goal.objects.filter(user=self.request.user).annotate(
+        return Goal.objects.filter(space=self.get_space()).annotate(
             saved_amount=Coalesce(
                 Sum("contributions__amount"),
                 Value(Decimal("0"), output_field=DecimalField(max_digits=14, decimal_places=2)),
             )
         )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=["get", "post"])
     def contributions(self, request, pk=None):
@@ -42,10 +41,10 @@ class GoalViewSet(viewsets.ModelViewSet):
         )
 
 
-class GoalContributionViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class GoalContributionViewSet(SpaceScopedMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """Only deletion: contributions are created through /goals/{id}/contributions/."""
 
     serializer_class = GoalContributionSerializer
 
     def get_queryset(self):
-        return GoalContribution.objects.filter(goal__user=self.request.user)
+        return GoalContribution.objects.filter(goal__space=self.get_space())

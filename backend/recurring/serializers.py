@@ -44,10 +44,10 @@ class RecurringRuleSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            self.fields["category"].queryset = Category.objects.filter(user=request.user)
-            self.fields["account"].queryset = Account.objects.filter(user=request.user)
+        space = self.context.get("space")
+        if space is not None:
+            self.fields["category"].queryset = Category.objects.filter(space=space)
+            self.fields["account"].queryset = Account.objects.filter(space=space)
 
     def validate_interval(self, value):
         if not 1 <= value <= 52:
@@ -67,7 +67,9 @@ class RecurringRuleSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data.setdefault("account", default_account(self.context["request"].user))
+        validated_data.setdefault(
+            "account", default_account(self.context["space"], self.context["request"].user)
+        )
         validated_data["next_date"] = validated_data["start_date"]
         return super().create(validated_data)
 

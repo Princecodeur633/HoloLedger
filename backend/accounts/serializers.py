@@ -22,7 +22,7 @@ class AccountSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate_name(self, value):
-        duplicates = Account.objects.filter(user=self.context["request"].user, name__iexact=value)
+        duplicates = Account.objects.filter(space=self.context["space"], name__iexact=value)
         if self.instance:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
@@ -35,7 +35,7 @@ class AccountSerializer(serializers.ModelSerializer):
         if balances is None:
             from .balances import account_balances
 
-            balances = account_balances(account.user)
+            balances = account_balances(account.space)
         return str(balances.get(account.id, account.initial_balance))
 
 
@@ -44,6 +44,9 @@ class TransferSerializer(serializers.ModelSerializer):
     to_account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.none())
     from_account_name = serializers.CharField(source="from_account.name", read_only=True)
     to_account_name = serializers.CharField(source="to_account.name", read_only=True)
+    # Filled for transfers between two spaces ("Perso → Couple").
+    from_space = serializers.SerializerMethodField()
+    to_space = serializers.SerializerMethodField()
 
     class Meta:
         model = Transfer
@@ -53,6 +56,8 @@ class TransferSerializer(serializers.ModelSerializer):
             "from_account_name",
             "to_account",
             "to_account_name",
+            "from_space",
+            "to_space",
             "amount",
             "fee",
             "fee_transaction",
@@ -65,14 +70,35 @@ class TransferSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            accounts = Account.objects.filter(user=request.user)
-            self.fields["from_account"].queryset = accounts
-            self.fields["to_account"].queryset = accounts
+        space = self.context.get("space")
+        if request and request.user.is_authenticated and space is not None:
+            # Money leaves an account of the current space and may land in any of the
+            # person's spaces (personal → couple, business → personal…).
+            self.fields["from_account"].queryset = Account.objects.filter(space=space)
+            self.fields["to_account"].queryset = Account.objects.filter(
+                space__memberships__user=request.user
+            )
+
+    def _space(self, transfer, side):
+        account = getattr(transfer, side)
+        if account.space_id == transfer.space_id and transfer.from_account.space_id == transfer.to_account.space_id:
+            return None
+        return {"id": str(account.space_id), "name": account.space.name, "icon": account.space.icon}
+
+    def get_from_space(self, transfer):
+        return self._space(transfer, "from_account")
+
+    def get_to_space(self, transfer):
+        return self._space(transfer, "to_account")
 
     def validate(self, attrs):
-        if attrs["from_account"] == attrs["to_account"]:
+        source, target = attrs["from_account"], attrs["to_account"]
+        if source == target:
             raise serializers.ValidationError(
                 {"to_account": "Choisissez deux comptes différents."}
+            )
+        if source.space.currency != target.space.currency:
+            raise serializers.ValidationError(
+                {"to_account": "Ces deux espaces n’utilisent pas la même devise."}
             )
         return attrs

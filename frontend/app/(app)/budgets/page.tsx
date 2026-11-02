@@ -19,20 +19,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency } from "@/lib/space";
 import { periodLabel, shiftPeriod, today } from "@/lib/dates";
 import { formatMoney, parseAmount } from "@/lib/format";
-import type { Budget, Category } from "@/lib/types";
+import type { Budget, BudgetPeriod, Category } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
-type Draft = { id?: string; category: string; amount: string; alert_threshold: string };
+type Draft = {
+  id?: string;
+  category: string;
+  amount: string;
+  period: BudgetPeriod;
+  alert_threshold: string;
+};
+
+const PERIODS: { value: BudgetPeriod; label: string; per: string }[] = [
+  { value: "month", label: "Mois", per: "par mois" },
+  { value: "quarter", label: "Trimestre", per: "par trimestre" },
+  { value: "semester", label: "Semestre", per: "par semestre" },
+  { value: "year", label: "Année", per: "par an" },
+];
+
+const perLabel = (period: BudgetPeriod) => PERIODS.find((p) => p.value === period)?.per ?? "";
 
 const STATUS_LABEL = { ok: "", warning: "Bientôt atteint", over: "Dépassé" };
 
 export default function BudgetsPage() {
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+  const currency = useCurrency();
   const [month, setMonth] = useState(today());
   const { data: budgets, reload } = useApi<Budget[]>("/budgets/", { date: month });
   const { data: categories } = useApi<Category[]>("/categories/");
@@ -42,8 +56,10 @@ export default function BudgetsPage() {
 
   const expenseCategories = (categories ?? []).filter((c) => c.type !== "income");
   const usedCategories = new Set((budgets ?? []).map((b) => b.category));
-  const totalBudget = (budgets ?? []).reduce((s, b) => s + Number(b.amount), 0);
-  const totalSpent = (budgets ?? []).reduce((s, b) => s + Number(b.usage?.spent ?? 0), 0);
+  // The overall bar only adds up monthly budgets: a quarter or a year can't be summed with them.
+  const monthly = (budgets ?? []).filter((b) => b.period === "month");
+  const totalBudget = monthly.reduce((s, b) => s + Number(b.amount), 0);
+  const totalSpent = monthly.reduce((s, b) => s + Number(b.usage?.spent ?? 0), 0);
   const isCurrentMonth = shiftPeriod(month, "month", 1) > today();
 
   async function save() {
@@ -89,7 +105,7 @@ export default function BudgetsPage() {
             variant="outline"
             onClick={() => {
               setError(null);
-              setDraft({ category: "", amount: "", alert_threshold: "80" });
+              setDraft({ category: "", amount: "", period: "month", alert_threshold: "80" });
             }}
           >
             <Plus /> Budget
@@ -118,10 +134,10 @@ export default function BudgetsPage() {
         </Button>
       </div>
 
-      {budgets && budgets.length > 0 && (
+      {monthly.length > 0 && (
         <div className="bg-card rounded-xl border p-4">
           <div className="mb-2 flex items-baseline justify-between text-sm">
-            <span className="text-muted-foreground">Total dépensé</span>
+            <span className="text-muted-foreground">Total des budgets mensuels</span>
             <span className="tabular-nums">
               <span className="font-semibold">{formatMoney(totalSpent, currency)}</span>
               {" / "}
@@ -140,8 +156,8 @@ export default function BudgetsPage() {
       {budgets === null && <ListSkeleton />}
       {budgets?.length === 0 && (
         <p className="text-muted-foreground py-6 text-center text-sm">
-          Fixez une limite mensuelle à vos catégories de dépenses : vous serez alerté à l’approche
-          du plafond.
+          Fixez une limite à vos catégories de dépenses, par mois, trimestre, semestre ou année :
+          vous serez alerté à l’approche du plafond.
         </p>
       )}
 
@@ -154,6 +170,11 @@ export default function BudgetsPage() {
                 <CategoryIcon icon={b.category_detail.icon} color={b.category_detail.color} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{b.category_detail.name}</p>
+                  {b.period !== "month" && (
+                    <p className="text-muted-foreground text-xs">
+                      {formatMoney(b.amount, currency)} {perLabel(b.period)}
+                    </p>
+                  )}
                   {usage && usage.status !== "ok" && (
                     <p
                       className={cn(
@@ -175,6 +196,7 @@ export default function BudgetsPage() {
                       id: b.id,
                       category: b.category,
                       amount: String(Number(b.amount)),
+                      period: b.period,
                       alert_threshold: String(b.alert_threshold),
                     });
                   }}
@@ -213,7 +235,7 @@ export default function BudgetsPage() {
       <Dialog open={draft !== null} onOpenChange={(open) => !open && setDraft(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{draft?.id ? "Modifier le budget" : "Nouveau budget mensuel"}</DialogTitle>
+            <DialogTitle>{draft?.id ? "Modifier le budget" : "Nouveau budget"}</DialogTitle>
           </DialogHeader>
           {draft && (
             <form
@@ -243,7 +265,26 @@ export default function BudgetsPage() {
                   ))}
                 </NativeSelect>
               </Field>
-              <Field label="Limite par mois" htmlFor="b-amount">
+              <Field label="Période">
+                <div className="bg-muted grid grid-cols-4 gap-1 rounded-lg p-1">
+                  {PERIODS.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, period: option.value })}
+                      className={cn(
+                        "rounded-md py-1.5 text-xs sm:text-sm",
+                        draft.period === option.value
+                          ? "bg-background font-medium shadow-sm"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label={`Limite ${perLabel(draft.period)}`} htmlFor="b-amount">
                 <MoneyInput
                   id="b-amount"
                   required

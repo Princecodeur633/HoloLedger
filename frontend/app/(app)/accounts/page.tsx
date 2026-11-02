@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency, useSpace } from "@/lib/space";
 import { formatDate, today } from "@/lib/dates";
 import { ACCOUNT_TYPES, accountTypeIcon, formatMoney, parseAmount } from "@/lib/format";
 import type { Account, AccountType, Paginated, Transfer } from "@/lib/types";
@@ -50,8 +50,7 @@ function errorText(err: unknown) {
 }
 
 function AccountsContent() {
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+  const currency = useCurrency();
   const params = useSearchParams();
   const { data: accounts, reload: reloadAccounts } = useApi<Account[]>("/accounts/");
   const { data: transfers, reload: reloadTransfers } = useApi<Paginated<Transfer>>("/transfers/");
@@ -73,6 +72,11 @@ function AccountsContent() {
   const [saving, setSaving] = useState(false);
 
   const active = (accounts ?? []).filter((a) => !a.is_archived);
+  const { current, spaces } = useSpace();
+  // Other spaces of the person, as destinations of a transfer (same currency only).
+  const otherSpaces = (spaces ?? []).filter(
+    (s) => s.id !== current?.id && s.currency === current?.currency && s.accounts.length > 0,
+  );
   const archived = (accounts ?? []).filter((a) => a.is_archived);
   const total = active.reduce((sum, a) => sum + Number(a.balance), 0);
 
@@ -254,7 +258,7 @@ function AccountsContent() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Vos comptes</CardTitle>
-          {active.length > 1 && (
+          {(active.length > 1 || otherSpaces.length > 0) && (
             <Button size="sm" onClick={openTransfer}>
               <ArrowLeftRight /> Transférer
             </Button>
@@ -314,7 +318,9 @@ function AccountsContent() {
                 <ArrowLeftRight className="text-muted-foreground size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
-                    {t.from_account_name} → {t.to_account_name}
+                    {t.from_space && `${t.from_space.icon} `}
+                    {t.from_account_name} → {t.to_space && `${t.to_space.icon} `}
+                    {t.to_account_name}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {formatDate(t.date)}
@@ -469,10 +475,21 @@ function AccountsContent() {
                     }
                   >
                     <option value="">Choisir…</option>
-                    {active.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
+                    <optgroup label={`${current?.icon ?? ""} Cet espace`}>
+                      {active.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {otherSpaces.map((space) => (
+                      <optgroup key={space.id} label={`${space.icon} ${space.name}`}>
+                        {space.accounts.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </NativeSelect>
                 </Field>

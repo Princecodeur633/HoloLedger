@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency } from "@/lib/space";
 import { formatDate } from "@/lib/dates";
 import { formatSigned } from "@/lib/format";
 import type {
@@ -43,9 +43,8 @@ function errorText(err: unknown) {
 }
 
 function StatementImport() {
-  const { user } = useAuth();
   const router = useRouter();
-  const currency = user?.currency ?? "XAF";
+  const currency = useCurrency();
   const { data: accounts } = useApi<Account[]>("/accounts/");
   const { data: categories } = useApi<Category[]>("/categories/");
 
@@ -343,7 +342,7 @@ function StatementImport() {
 }
 
 function SmsImport() {
-  const { user } = useAuth();
+  const currency = useCurrency();
   const router = useRouter();
   const [values, setValues] = useState<{ key: number; data: Partial<TransactionInput> } | null>(
     null,
@@ -359,7 +358,7 @@ function SmsImport() {
           <TransactionForm
             key={values.key}
             initial={values.data}
-            currency={user?.currency ?? "XAF"}
+            currency={currency}
             onSubmit={async (data) => {
               await api("/transactions/", { method: "POST", body: data });
               toast.success("Opération enregistrée");

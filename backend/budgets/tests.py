@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from transactions.models import Transaction
+from spaces.services import personal_space
 
 User = get_user_model()
 
@@ -19,7 +20,7 @@ class BudgetTests(APITestCase):
 
     def spend(self, amount, category, day):
         Transaction.objects.create(
-            user=self.user, type="expense", amount=amount, category=category, date=day
+            user=self.user, space=personal_space(self.user), type="expense", amount=amount, category=category, date=day
         )
 
     def test_usage_and_status(self):

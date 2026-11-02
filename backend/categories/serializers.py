@@ -10,10 +10,10 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "is_default", "created_at"]
 
     def validate(self, attrs):
-        user = self.context["request"].user
+        space = self.context["space"]
         name = attrs.get("name", getattr(self.instance, "name", None))
         type_ = attrs.get("type", getattr(self.instance, "type", None))
-        duplicates = Category.objects.filter(user=user, name__iexact=name, type=type_)
+        duplicates = Category.objects.filter(space=space, name__iexact=name, type=type_)
         if self.instance:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():

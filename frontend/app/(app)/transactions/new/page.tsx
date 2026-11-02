@@ -10,15 +10,15 @@ import { SmsParser } from "@/components/SmsParser";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Button } from "@/components/ui/button";
 import { api, NetworkError } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency } from "@/lib/space";
 import { formatMoney } from "@/lib/format";
 import { enqueue } from "@/lib/outbox";
 import type { Transaction, TransactionInput } from "@/lib/types";
 
 export default function NewTransactionPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+
+  const currency = useCurrency();
   const [showSms, setShowSms] = useState(false);
   // Changing the key remounts the form with the values read from an SMS.
   const [prefill, setPrefill] = useState<{ key: number; values?: Partial<TransactionInput> }>({

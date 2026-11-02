@@ -21,6 +21,9 @@ class Account(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="accounts"
     )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="accounts"
+    )
     name = models.CharField(max_length=60)
     type = models.CharField(max_length=20, choices=Type.choices, default=Type.CASH)
     initial_balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
@@ -32,7 +35,7 @@ class Account(models.Model):
     class Meta:
         ordering = ["is_archived", "created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["user", "name"], name="unique_account_name_per_user")
+            models.UniqueConstraint(fields=["space", "name"], name="unique_account_name_per_space")
         ]
 
     def __str__(self):
@@ -42,10 +45,12 @@ class Account(models.Model):
 DEFAULT_ACCOUNT = {"name": "Espèces", "type": Account.Type.CASH, "color": "#22c55e", "icon": "wallet"}
 
 
-def default_account(user):
-    """The account used when none is given (first active one, created if missing)."""
-    account = user.accounts.filter(is_archived=False).order_by("created_at").first()
-    return account or Account.objects.create(user=user, **DEFAULT_ACCOUNT)
+def default_account(space, user=None):
+    """The account used when none is given (first active one of the space, created if missing)."""
+    account = space.accounts.filter(is_archived=False).order_by("created_at").first()
+    return account or Account.objects.create(
+        space=space, user=user or space.created_by, **DEFAULT_ACCOUNT
+    )
 
 
 class Transfer(models.Model):
@@ -57,6 +62,9 @@ class Transfer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transfers"
+    )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="transfers"
     )
     from_account = models.ForeignKey(
         Account, on_delete=models.PROTECT, related_name="transfers_out"

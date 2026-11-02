@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from transactions.models import Transaction
+from spaces.services import personal_space
 
 from .models import PushSubscription
 
@@ -50,7 +51,7 @@ class ReminderTests(APITestCase):
         self.assertEqual(call().data["sent"], 1)
 
         Transaction.objects.create(
-            user=self.user,
+            user=self.user, space=personal_space(self.user),
             type="expense",
             amount="500",
             date=timezone.localdate(),

@@ -23,6 +23,9 @@ class Transaction(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transactions"
     )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="transactions"
+    )
     type = models.CharField(max_length=10, choices=Type.choices)
     amount = models.DecimalField(
         max_digits=14, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
@@ -53,13 +56,13 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ["-date", "-created_at"]
-        indexes = [models.Index(fields=["user", "date"])]
+        indexes = [models.Index(fields=["space", "date"])]
 
     def save(self, *args, **kwargs):
         if self.account_id is None:
             from accounts.models import default_account
 
-            self.account = default_account(self.user)
+            self.account = default_account(self.space, self.user)
         super().save(*args, **kwargs)
 
     def __str__(self):

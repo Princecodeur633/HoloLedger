@@ -5,6 +5,8 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from spaces.scoping import SpaceScopedMixin
+
 from .filters import TransactionFilter
 from .models import Transaction
 from .serializers import TransactionSerializer
@@ -23,7 +25,7 @@ EXPORT_COLUMNS = [
 ]
 
 
-class TransactionViewSet(viewsets.ModelViewSet):
+class TransactionViewSet(SpaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     filterset_class = TransactionFilter
     search_fields = ["description", "category__name", "amount", "source", "note"]
@@ -31,12 +33,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user).select_related(
-            "category", "account"
+        return Transaction.objects.filter(space=self.get_space()).select_related(
+            "category", "account", "user"
         )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     @action(detail=False)
     def export(self, request):

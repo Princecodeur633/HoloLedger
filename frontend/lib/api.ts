@@ -1,3 +1,5 @@
+import { getSpaceId, isSpaceScoped } from "./space-store";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 const TOKEN_KEY = "holoLedger.token";
 
@@ -93,9 +95,14 @@ async function request(
     body = JSON.stringify(options.body);
   }
 
+  // Every space-level call says which space it is about (personal by default on the server).
+  const query = { ...options.query };
+  const space = getSpaceId();
+  if (space && isSpaceScoped(path) && query.space === undefined) query.space = space;
+
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}${buildQuery(options.query)}`, {
+    res = await fetch(`${API_URL}${path}${buildQuery(query)}`, {
       method: options.method ?? "GET",
       headers,
       body,

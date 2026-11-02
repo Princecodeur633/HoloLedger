@@ -14,6 +14,9 @@ class Category(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="categories"
     )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="categories"
+    )
     name = models.CharField(max_length=60)
     type = models.CharField(max_length=10, choices=Type.choices)
     color = models.CharField(max_length=20, default="#64748b")
@@ -25,7 +28,7 @@ class Category(models.Model):
         ordering = ["type", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "name", "type"], name="unique_category_per_user"
+                fields=["space", "name", "type"], name="unique_category_per_space"
             )
         ]
 
@@ -36,7 +39,7 @@ class Category(models.Model):
         return self.type in (self.Type.BOTH, transaction_type)
 
 
-# (name, type, color, icon) seeded for every new user.
+# (name, type, color, icon) seeded in every new personal space (see spaces/seed.py).
 DEFAULT_CATEGORIES = [
     ("Alimentation", "expense", "#f97316", "shopping-basket"),
     ("Transport", "expense", "#3b82f6", "bus"),
@@ -55,12 +58,3 @@ DEFAULT_CATEGORIES = [
     ("Autre revenu", "income", "#64748b", "tag"),
 ]
 
-
-def create_default_categories(user):
-    Category.objects.bulk_create(
-        [
-            Category(user=user, name=name, type=type_, color=color, icon=icon, is_default=True)
-            for name, type_, color, icon in DEFAULT_CATEGORIES
-        ],
-        ignore_conflicts=True,
-    )

@@ -11,6 +11,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from spaces.services import request_space
+
 from .models import Transaction
 from .periods import BUCKET_FOR_PERIOD, PERIODS, period_bounds
 from .serializers import TransactionSerializer
@@ -18,6 +20,9 @@ from .serializers import TransactionSerializer
 ZERO = Value(Decimal("0"), output_field=DecimalField(max_digits=14, decimal_places=2))
 INCOME = Transaction.Type.INCOME
 EXPENSE = Transaction.Type.EXPENSE
+
+
+ZERO_DECIMAL = Decimal("0")
 
 
 def totals(queryset):
@@ -115,16 +120,16 @@ class SummaryView(APIView):
         from debts.views import open_totals
         from recurring.services import pending_occurrences, process_due_rules
 
-        user = request.user
-        process_due_rules(user=user)
-        qs = Transaction.objects.filter(user=user)
+        space = request_space(request)
+        process_due_rules(space=space)
+        qs = Transaction.objects.filter(space=space)
         today = timezone.localdate()
         month_start, month_end = period_bounds("month", today)
         month_qs = qs.filter(date__range=(month_start, month_end))
         overall = totals(qs)
         recent = qs.select_related("category", "account")[:5]
 
-        balances = account_balances(user)
+        balances = account_balances(space)
         accounts = [
             {
                 "id": a.id,
@@ -134,10 +139,10 @@ class SummaryView(APIView):
                 "icon": a.icon,
                 "balance": balances.get(a.id, a.initial_balance),
             }
-            for a in user.accounts.filter(is_archived=False)
+            for a in space.accounts.filter(is_archived=False)
         ]
 
-        budgets = Budget.objects.filter(user=user).select_related("category")
+        budgets = Budget.objects.filter(space=space).select_related("category")
         usage = budget_usage(budgets, today)
         alerts = [
             {
@@ -172,11 +177,31 @@ class SummaryView(APIView):
         }
 
         # Daily total balance over the last 30 days, for the sparkline on the balance card.
-        trend = balance_history(user, today - timedelta(days=29), today, "day")
+        trend = balance_history(space, today - timedelta(days=29), today, "day")
+
+        # Shared spaces: who put in / spent how much this month ("payé par").
+        members = []
+        if space.kind != space.Kind.PERSONAL:
+            by_user = {
+                (row["user"], row["type"]): row["total"]
+                for row in month_qs.values("user", "type").annotate(total=Sum("amount"))
+            }
+            for membership in space.memberships.select_related("user"):
+                member = membership.user
+                members.append(
+                    {
+                        "id": member.id,
+                        "username": member.username,
+                        "income": by_user.get((member.id, INCOME), ZERO_DECIMAL),
+                        "expense": by_user.get((member.id, EXPENSE), ZERO_DECIMAL),
+                    }
+                )
 
         return Response(
             {
-                "currency": user.currency,
+                "currency": space.currency,
+                "space": {"id": space.id, "kind": space.kind, "name": space.name},
+                "members": members,
                 "balance": sum(balances.values(), Decimal("0")),
                 "total_income": overall["income"],
                 "total_expense": overall["expense"],
@@ -184,10 +209,10 @@ class SummaryView(APIView):
                 "month": {"start": month_start, "end": month_end, **totals(month_qs)},
                 "top_expense_categories": category_breakdown(month_qs, EXPENSE)[:5],
                 "budget_alerts": alerts,
-                "pending_recurring_count": pending_occurrences(user).count(),
+                "pending_recurring_count": pending_occurrences(space).count(),
                 "balance_trend": [point["balance"] for point in trend],
                 "last_month": last_month,
-                "debts": open_totals(user),
+                "debts": open_totals(space),
                 "recent_transactions": TransactionSerializer(
                     recent, many=True, context={"request": request}
                 ).data,
@@ -201,7 +226,8 @@ class PeriodStatsView(APIView):
     def get(self, request):
         period = parse_period(request)
         start, end = period_bounds(period, parse_ref_date(request))
-        qs = Transaction.objects.filter(user=request.user, date__range=(start, end))
+        space = request_space(request)
+        qs = Transaction.objects.filter(space=space, date__range=(start, end))
         bucket = BUCKET_FOR_PERIOD[period]
 
         return Response(
@@ -209,7 +235,7 @@ class PeriodStatsView(APIView):
                 "period": period,
                 "start": start,
                 "end": end,
-                "currency": request.user.currency,
+                "currency": space.currency,
                 **totals(qs),
                 "bucket": bucket,
                 "series": evolution(qs, start, end, bucket),
@@ -226,7 +252,7 @@ class CategoryStatsView(APIView):
         type_ = request.query_params.get("type", EXPENSE)
         if type_ not in Transaction.Type.values:
             raise ValidationError({"type": "Valeurs possibles : income, expense."})
-        qs = Transaction.objects.filter(user=request.user, date__range=(start, end))
+        qs = Transaction.objects.filter(space=request_space(request), date__range=(start, end))
 
         return Response(
             {
@@ -245,16 +271,33 @@ def percent_change(current, previous):
     return round(float((current - previous) / previous * 100), 1)
 
 
-def balance_history(user, start, end, bucket):
-    """Total balance at the end of each bucket (transfers cancel out across accounts)."""
-    from accounts.models import Account
+def balance_history(space, start, end, bucket):
+    """Total balance of the space at the end of each bucket.
 
-    initial = Account.objects.filter(user=user).aggregate(total=Coalesce(Sum("initial_balance"), ZERO))
-    qs = Transaction.objects.filter(user=user)
+    Transfers inside the space cancel out; transfers to / from another space move money in
+    or out of it and are counted.
+    """
+    from accounts.models import Account, Transfer
+
+    initial = Account.objects.filter(space=space).aggregate(
+        total=Coalesce(Sum("initial_balance"), ZERO)
+    )
+    qs = Transaction.objects.filter(space=space)
+    moves = []  # (date, signed amount) of transfers crossing the space boundary
+    crossing = Transfer.objects.filter(
+        Q(from_account__space=space) ^ Q(to_account__space=space)
+    ).values_list("date", "amount", "to_account__space")
+    for date_, amount, to_space in crossing:
+        moves.append((date_, amount if to_space == space.id else -amount))
+
     running = initial["total"] + totals(qs.filter(date__lt=start))["net"]
+    running += sum((a for d, a in moves if d < start), Decimal("0"))
+    points = evolution(qs.filter(date__range=(start, end)), start, end, bucket)
     history = []
-    for point in evolution(qs.filter(date__range=(start, end)), start, end, bucket):
+    for i, point in enumerate(points):
+        bucket_end = points[i + 1]["start"] - timedelta(days=1) if i + 1 < len(points) else end
         running += point["net"]
+        running += sum((a for d, a in moves if point["start"] <= d <= bucket_end), Decimal("0"))
         history.append({"start": point["start"], "balance": running})
     return history
 
@@ -263,11 +306,11 @@ class InsightsView(APIView):
     """GET /api/stats/insights/?period=month&date=… — advanced statistics for a period."""
 
     def get(self, request):
-        user = request.user
+        space = request_space(request)
         period = parse_period(request)
         start, end = period_bounds(period, parse_ref_date(request))
         prev_start, prev_end = period_bounds(period, start - timedelta(days=1))
-        qs = Transaction.objects.filter(user=user)
+        qs = Transaction.objects.filter(space=space)
         current = totals(qs.filter(date__range=(start, end)))
         previous = totals(qs.filter(date__range=(prev_start, prev_end)))
 
@@ -319,7 +362,7 @@ class InsightsView(APIView):
                 "period": period,
                 "start": start,
                 "end": end,
-                "currency": user.currency,
+                "currency": space.currency,
                 "current": current,
                 "previous": {"start": prev_start, "end": prev_end, **previous},
                 "change": {
@@ -340,7 +383,7 @@ class InsightsView(APIView):
                 ).data,
                 "by_payment_method": by_payment,
                 "by_account": by_account,
-                "balance_history": balance_history(user, hist_start, hist_end, bucket),
+                "balance_history": balance_history(space, hist_start, hist_end, bucket),
                 "balance_history_bucket": bucket,
             }
         )

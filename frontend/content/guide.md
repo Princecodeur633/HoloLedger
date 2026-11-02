@@ -101,11 +101,11 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 [Mes récurrentes](/recurring)
 
 ## 🎯 Budgets
-> Une limite par catégorie et par mois.
+> Une limite par catégorie : par mois, trimestre, semestre ou année.
 **Pourquoi :** être prévenu avant de trop dépenser.
 **Comment :**
 1. **Plus → Budgets → + Budget**.
-2. Choisissez une catégorie et un montant maximum.
+2. Choisissez une catégorie, la **période** et un montant maximum.
 3. La barre passe à l'orange puis au rouge quand vous approchez de la limite.
 [Mes budgets](/budgets)
 
@@ -133,6 +133,63 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 **Comment :**
 1. **Plus → Comptes → Transférer**.
 2. Choisissez le compte de départ, d'arrivée, le montant et les frais éventuels.
+💡 Le compte d'arrivée peut être dans un autre de vos espaces.
+
+## 🗂️ Les espaces
+> Perso, couple, business : chaque espace a ses propres comptes et totaux.
+**Pourquoi :** ne jamais mélanger l'argent de la maison, du couple et de l'activité.
+**Comment :**
+1. Touchez le bouton de l'espace en haut de l'écran (ex. **👤 Personnel ▾**).
+2. Choisissez l'espace : tout l'écran affiche alors ses données.
+3. **Gérer, créer un espace** pour en ajouter un.
+💡 Le solde de chaque espace est affiché séparément, jamais additionné.
+[Mes espaces](/spaces)
+
+## 💑 Espace couple
+> Les dépenses communes, gérées à deux.
+**Pourquoi :** voir ensemble le compte commun, les budgets et qui a payé quoi.
+**Comment :**
+1. **Mes espaces → Espace couple**, donnez-lui un nom.
+2. **Inviter votre partenaire** avec son numéro ; il accepte dans **Mes espaces**.
+3. Chaque opération montre qui l'a notée ; l'accueil montre qui a contribué combien.
+💡 Pas encore de compte ? Envoyez-lui le lien sur WhatsApp, l'invitation l'attendra.
+
+## 💼 Espace business
+> Votre activité à part : ventes, dépenses, bénéfice.
+**Pourquoi :** savoir si votre activité gagne de l'argent, sans la mélanger à vos dépenses perso.
+**Comment :**
+1. **Mes espaces → Espace business**, nommez-le (ex. Boutique Mama).
+2. Notez vos **Ventes** et vos dépenses comme d'habitude.
+3. L'accueil affiche **chiffre d'affaires**, dépenses et **bénéfice** du mois.
+💡 Vous pouvez inviter un associé (2 personnes au maximum) et créer plusieurs business.
+
+## 🔄 Tontine (ristourne)
+> Cotiser à tour de rôle : qui a payé, qui mange, qui est en retard.
+**Pourquoi :** fini le cahier : tout le groupe voit les versements, les retards et l'ordre de passage.
+**Comment :**
+1. **Mes espaces → Tontine**, puis réglez les **Règles** : montant, rythme, délai, pénalité.
+2. Ajoutez les **membres** : invitez ceux qui ont l'app, ajoutez les autres au **carnet**.
+3. Chacun touche **+ → J'ai versé** ; le gestionnaire **valide** ou **refuse**.
+4. Quand la séance est payée : **Cagnotte remise à …**, et on passe au suivant.
+💡 Vert payé · orange à valider · rouge en retard. **Tirer au sort l'ordre** est dans Membres.
+[Mes espaces](/spaces)
+
+## 👨‍👩‍👧 Caisse familiale
+> Qui a cotisé combien, chaque mois, et à quoi l'argent a servi.
+**Pourquoi :** la transparence dans la famille, sans disputes.
+**Comment :**
+1. **Mes espaces → Caisse familiale**, fixez la cotisation (un montant différent possible par membre).
+2. Les membres déclarent leurs versements, le gestionnaire les valide.
+3. Chaque sortie d'argent est notée dans **Dépenses**, avec son but (santé, funérailles, école…).
+💡 Un projet familial (ex. maison) peut avoir son objectif et sa barre de progression.
+
+## 🔀 Transférer entre espaces
+> Ex. : verser de l'argent de votre MoMo perso vers le compte commun.
+**Pourquoi :** alimenter un espace sans le compter comme dépense ni revenu.
+**Comment :**
+1. Dans l'espace d'où part l'argent : **Plus → Comptes → Transférer**.
+2. Dans **Vers**, choisissez un compte d'un autre espace.
+💡 Seul l'espace d'origine peut annuler ce transfert.
 
 ## 📊 Rapports
 > Graphiques et bilan par période.

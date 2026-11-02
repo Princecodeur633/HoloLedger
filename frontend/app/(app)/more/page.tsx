@@ -3,17 +3,19 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
-import { MORE_NAV, PageHeader } from "@/components/AppShell";
+import { moreNav, PageHeader } from "@/components/AppShell";
 import { ProfileCard } from "@/components/ProfileCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useSpace } from "@/lib/space";
 
 export default function MorePage() {
+  const { current } = useSpace();
   return (
     <div>
       <PageHeader title="Plus" />
       <ProfileCard href="/profile" className="mb-4" />
       <ul className="bg-card divide-y rounded-xl border">
-        {MORE_NAV.map(({ href, label, description, icon: Icon }) => (
+        {moreNav(current?.kind).map(({ href, label, description, icon: Icon }) => (
           <li key={href}>
             <Link href={href} className="hover:bg-muted flex items-center gap-3 px-4 py-3">
               <span className="bg-muted flex size-9 items-center justify-center rounded-full">

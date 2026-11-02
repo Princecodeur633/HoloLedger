@@ -18,6 +18,7 @@ class BudgetSerializer(serializers.ModelSerializer):
             "category",
             "category_detail",
             "amount",
+            "period",
             "alert_threshold",
             "usage",
             "created_at",
@@ -27,10 +28,10 @@ class BudgetSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
+        space = self.context.get("space")
+        if space is not None:
             self.fields["category"].queryset = Category.objects.filter(
-                user=request.user, type__in=[Category.Type.EXPENSE, Category.Type.BOTH]
+                space=space, type__in=[Category.Type.EXPENSE, Category.Type.BOTH]
             )
 
     def validate_alert_threshold(self, value):
@@ -39,7 +40,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         return value
 
     def validate_category(self, category):
-        duplicates = Budget.objects.filter(user=self.context["request"].user, category=category)
+        duplicates = Budget.objects.filter(space=self.context["space"], category=category)
         if self.instance:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():

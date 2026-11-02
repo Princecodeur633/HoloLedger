@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { OfflineSync } from "@/components/OfflineSync";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { SpaceProvider } from "@/lib/space";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 const VERSION_CHECK_INTERVAL = 5 * 60_000;
@@ -56,7 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <AuthProvider>
-        {children}
+        <SpaceProvider>{children}</SpaceProvider>
         <OfflineSync />
         <Toaster position="top-center" richColors />
       </AuthProvider>

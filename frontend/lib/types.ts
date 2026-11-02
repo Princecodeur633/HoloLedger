@@ -39,6 +39,8 @@ export interface Transaction {
   account: string;
   account_name: string;
   recurring_rule: string | null;
+  /** Who recorded it (shown as "payé par" in shared spaces). */
+  author: { id: string; username: string };
   source: string;
   payment_method: PaymentMethod;
   note: string;
@@ -77,6 +79,9 @@ export interface CategoryShare {
 
 export interface Summary {
   currency: string;
+  space: { id: string; kind: SpaceKind; name: string };
+  /** Shared spaces: what each member put in / spent this month. */
+  members: { id: string; username: string; income: Decimal; expense: Decimal }[];
   balance: Decimal;
   total_income: Decimal;
   total_expense: Decimal;
@@ -145,6 +150,9 @@ export interface Transfer {
   from_account_name: string;
   to_account: string;
   to_account_name: string;
+  /** Set when the money crosses spaces (e.g. personal → couple). */
+  from_space: { id: string; name: string; icon: string } | null;
+  to_space: { id: string; name: string; icon: string } | null;
   amount: Decimal;
   fee: Decimal;
   fee_transaction: string | null;
@@ -169,9 +177,12 @@ export interface Budget {
   category: string;
   category_detail: Category;
   amount: Decimal;
+  period: BudgetPeriod;
   alert_threshold: number;
   usage: BudgetUsage | null;
 }
+
+export type BudgetPeriod = "month" | "quarter" | "semester" | "year";
 
 export interface BudgetAlert extends BudgetUsage {
   budget: string;
@@ -298,5 +309,30 @@ export interface Debt {
   percent: number;
   settled: boolean;
   payments: DebtPayment[];
+  created_at: string;
+}
+
+export type SpaceKind = "personal" | "couple" | "business" | "tontine" | "family";
+
+export interface Space {
+  id: string;
+  kind: SpaceKind;
+  name: string;
+  icon: string;
+  currency: string;
+  role: "owner" | "manager" | "member" | null;
+  members: { id: string; username: string; role: "owner" | "manager" | "member" }[];
+  balance: Decimal;
+  accounts: { id: string; name: string }[];
+  pending_invitations: { id: string; phone: string; created_at: string }[];
+  created_at: string;
+}
+
+export interface Invitation {
+  id: string;
+  space: Pick<Space, "id" | "kind" | "name" | "icon">;
+  inviter: string;
+  phone: string;
+  status: string;
   created_at: string;
 }

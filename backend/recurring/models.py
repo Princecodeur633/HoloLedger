@@ -21,6 +21,9 @@ class RecurringRule(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recurring_rules"
     )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="recurring_rules"
+    )
     type = models.CharField(max_length=10, choices=[("income", "Revenu"), ("expense", "Dépense")])
     amount = models.DecimalField(
         max_digits=14, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]

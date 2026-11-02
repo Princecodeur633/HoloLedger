@@ -9,6 +9,7 @@ from debts.views import DebtPaymentViewSet, DebtViewSet
 from goals.views import GoalContributionViewSet, GoalViewSet
 from imports.views import CommitView, PreviewView, SmsView
 from recurring.views import RecurringRuleViewSet
+from spaces.views import InvitationViewSet, SpaceViewSet
 from transactions.stats import CategoryStatsView, InsightsView, PeriodStatsView, SummaryView
 from transactions.views import TransactionViewSet
 
@@ -23,11 +24,14 @@ router.register("goal-contributions", GoalContributionViewSet, basename="goal-co
 router.register("recurring", RecurringRuleViewSet, basename="recurring")
 router.register("debts", DebtViewSet, basename="debt")
 router.register("debt-payments", DebtPaymentViewSet, basename="debt-payment")
+router.register("spaces", SpaceViewSet, basename="space")
+router.register("invitations", InvitationViewSet, basename="invitation")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("users.urls")),
     path("api/reminders/", include("reminders.urls")),
+    path("api/group/", include("groups.urls")),
     path("api/stats/summary/", SummaryView.as_view(), name="stats-summary"),
     path("api/stats/period/", PeriodStatsView.as_view(), name="stats-period"),
     path("api/stats/categories/", CategoryStatsView.as_view(), name="stats-categories"),

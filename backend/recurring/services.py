@@ -10,9 +10,10 @@ def create_occurrence(rule, on_date, amount=None):
     """Create the transaction for `rule` on `on_date` and move the rule forward."""
     tx = Transaction.objects.create(
         user=rule.user,
+        space=rule.space,
         type=rule.type,
         amount=amount if amount is not None else rule.amount,
-        currency=rule.user.currency,
+        currency=rule.space.currency,
         date=on_date,
         description=rule.description,
         category=rule.category,
@@ -25,14 +26,14 @@ def create_occurrence(rule, on_date, amount=None):
     return tx
 
 
-def process_due_rules(user=None, today=None):
+def process_due_rules(space=None, today=None):
     """Create every due occurrence of auto-confirmed rules. Returns the created transactions."""
     today = today or timezone.localdate()
     rules = RecurringRule.objects.filter(
         is_active=True, auto_confirm=True, next_date__isnull=False, next_date__lte=today
-    ).select_related("user", "category", "account")
-    if user is not None:
-        rules = rules.filter(user=user)
+    ).select_related("user", "space", "category", "account")
+    if space is not None:
+        rules = rules.filter(space=space)
 
     created = []
     for rule in rules:
@@ -42,9 +43,9 @@ def process_due_rules(user=None, today=None):
     return created
 
 
-def pending_occurrences(user, today=None):
+def pending_occurrences(space, today=None):
     """Due occurrences of rules that need a manual confirmation."""
     today = today or timezone.localdate()
     return RecurringRule.objects.filter(
-        user=user, is_active=True, auto_confirm=False, next_date__isnull=False, next_date__lte=today
+        space=space, is_active=True, auto_confirm=False, next_date__isnull=False, next_date__lte=today
     ).select_related("category", "account")

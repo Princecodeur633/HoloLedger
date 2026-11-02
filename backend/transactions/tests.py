@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase
 from rest_framework.test import APITestCase
+from spaces.services import personal_space
 
 from .models import Transaction
 from .periods import period_bounds
@@ -41,7 +42,7 @@ class TransactionApiTests(APITestCase):
 
     def add(self, type_, amount, category, day, **extra):
         return Transaction.objects.create(
-            user=self.user, type=type_, amount=Decimal(amount), category=category, date=day, **extra
+            user=self.user, space=personal_space(self.user), type=type_, amount=Decimal(amount), category=category, date=day, **extra
         )
 
     def test_create_expense(self):
@@ -85,7 +86,7 @@ class TransactionApiTests(APITestCase):
     def test_isolation_between_users(self):
         other = User.objects.create_user("bob", "bob@example.com", "pw")
         tx = Transaction.objects.create(
-            user=other, type="expense", amount=10, category=other.categories.first()
+            user=other, space=personal_space(other), type="expense", amount=10, category=other.categories.first()
         )
         self.assertEqual(self.client.get("/api/transactions/").data["count"], 0)
         self.assertEqual(self.client.get(f"/api/transactions/{tx.id}/").status_code, 404)
@@ -129,7 +130,7 @@ class StatsApiTests(APITestCase):
             ("expense", 10000, food, date(2026, 9, 15)),
         ]:
             Transaction.objects.create(
-                user=self.user, type=type_, amount=amount, category=cat, date=day
+                user=self.user, space=personal_space(self.user), type=type_, amount=amount, category=cat, date=day
             )
 
     def test_period_month(self):
@@ -184,7 +185,7 @@ class InsightsAndExportTests(APITestCase):
             ("expense", 30000, food, date(2026, 10, 20)),
         ]:
             Transaction.objects.create(
-                user=self.user, type=type_, amount=amount, category=cat, date=day,
+                user=self.user, space=personal_space(self.user), type=type_, amount=amount, category=cat, date=day,
                 description="Marché; centre",
             )
 

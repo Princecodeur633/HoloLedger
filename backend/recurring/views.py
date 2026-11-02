@@ -2,6 +2,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from spaces.scoping import SpaceScopedMixin
 from transactions.serializers import TransactionSerializer
 
 from .models import RecurringRule
@@ -9,24 +10,21 @@ from .serializers import ConfirmSerializer, RecurringRuleSerializer
 from .services import create_occurrence, pending_occurrences, process_due_rules
 
 
-class RecurringRuleViewSet(viewsets.ModelViewSet):
+class RecurringRuleViewSet(SpaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = RecurringRuleSerializer
     pagination_class = None
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return RecurringRule.objects.filter(user=self.request.user).select_related(
+        return RecurringRule.objects.filter(space=self.get_space()).select_related(
             "category", "account"
         )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     @action(detail=False)
     def pending(self, request):
         """Create due auto-confirmed occurrences, then list those awaiting confirmation."""
-        created = process_due_rules(user=request.user)
-        rules = pending_occurrences(request.user)
+        created = process_due_rules(space=self.get_space())
+        rules = pending_occurrences(self.get_space())
         return Response(
             {
                 "created_count": len(created),

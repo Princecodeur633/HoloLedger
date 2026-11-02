@@ -27,11 +27,11 @@ FALLBACK = {"expense": "Autre dépense", "income": "Autre revenu"}
 
 
 class CategorySuggester:
-    def __init__(self, user):
-        self.categories = list(Category.objects.filter(user=user))
+    def __init__(self, space):
+        self.categories = list(Category.objects.filter(space=space))
         self.history = {}
         recent = (
-            Transaction.objects.filter(user=user)
+            Transaction.objects.filter(space=space)
             .exclude(description="")
             .order_by("date", "created_at")
             .values_list("description", "type", "category_id")

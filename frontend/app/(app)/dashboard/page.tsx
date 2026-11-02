@@ -7,16 +7,20 @@ import { PageHeader } from "@/components/AppShell";
 import { BalanceCard, StatCard } from "@/components/BalanceCard";
 import { CategoryIcon } from "@/components/CategoryBadge";
 import { GettingStarted } from "@/components/GettingStarted";
+import { GroupHome } from "@/components/group/GroupHome";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MonthlyRecap } from "@/components/MonthlyRecap";
 import { TransactionList } from "@/components/TransactionList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/UserAvatar";
 import { WhatsAppReminder } from "@/components/WhatsAppVerify";
 import { useAuth } from "@/lib/auth";
 import { parseISODate, periodLabel, today, toISODate } from "@/lib/dates";
 import { accountTypeIcon, formatMoney, formatSigned } from "@/lib/format";
 import { MASK, useHidden } from "@/lib/privacy";
+import { isGroupKind } from "@/lib/group";
+import { spaceWords, useSpace } from "@/lib/space";
 import type { RecurringRule, Summary } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 
@@ -73,7 +77,7 @@ function Upcoming({ currency }: { currency: string }) {
   );
 }
 
-export default function DashboardPage() {
+function PersonalDashboard() {
   const { user } = useAuth();
   const { data: summary, error } = useApi<Summary>("/stats/summary/");
   const hidden = useHidden();
@@ -82,6 +86,7 @@ export default function DashboardPage() {
   if (!summary) return <DashboardSkeleton />;
 
   const { currency, month, debts } = summary;
+  const words = spaceWords(summary.space.kind);
   const money = (v: string | number) => (hidden ? MASK : formatMoney(v, currency));
   const alert = summary.budget_alerts[0];
 
@@ -121,7 +126,7 @@ export default function DashboardPage() {
           </Link>
         )}
         <MonthlyRecap summary={summary} />
-        <GettingStarted summary={summary} />
+        {summary.space.kind === "personal" && <GettingStarted summary={summary} />}
         <WhatsAppReminder />
         <InstallPrompt />
       </div>
@@ -149,10 +154,20 @@ export default function DashboardPage() {
           {periodLabel(today(), "month")}
         </h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <StatCard label="Revenus" value={month.income} currency={currency} variant="income" />
-          <StatCard label="Dépenses" value={month.expense} currency={currency} variant="expense" />
+          <StatCard
+            label={words.income}
+            value={month.income}
+            currency={currency}
+            variant="income"
+          />
+          <StatCard
+            label={words.expense}
+            value={month.expense}
+            currency={currency}
+            variant="expense"
+          />
           <div className="col-span-2 sm:col-span-1">
-            <StatCard label="Résultat" value={month.net} currency={currency} variant="net" />
+            <StatCard label={words.net} value={month.net} currency={currency} variant="net" />
           </div>
         </div>
       </section>
@@ -166,7 +181,7 @@ export default function DashboardPage() {
           <span className="flex flex-1 flex-wrap gap-x-4 gap-y-1">
             {Number(debts.owed_to_me) > 0 && (
               <span>
-                On me doit{" "}
+                {words.owedToMe}{" "}
                 <span className="text-income font-semibold tabular-nums">
                   {money(debts.owed_to_me)}
                 </span>
@@ -174,7 +189,7 @@ export default function DashboardPage() {
             )}
             {Number(debts.i_owe) > 0 && (
               <span>
-                Je dois{" "}
+                {words.iOwe}{" "}
                 <span className="text-expense font-semibold tabular-nums">
                   {money(debts.i_owe)}
                 </span>
@@ -183,6 +198,24 @@ export default function DashboardPage() {
           </span>
           <ChevronRight className="text-muted-foreground size-4" />
         </Link>
+      )}
+
+      {summary.members.length > 1 && (
+        <section>
+          <h2 className="text-muted-foreground mb-2 text-sm font-medium">
+            Qui a contribué ce mois-ci
+          </h2>
+          <ul className="bg-card divide-y rounded-xl border">
+            {summary.members.map((m) => (
+              <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+                <UserAvatar name={m.username} className="size-8 text-xs" />
+                <span className="min-w-0 flex-1 truncate font-medium">{m.username}</span>
+                <span className="text-income tabular-nums">+{money(m.income)}</span>
+                <span className="text-expense tabular-nums">−{money(m.expense)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <Upcoming currency={currency} />
@@ -207,4 +240,9 @@ export default function DashboardPage() {
       </Link>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  const { current } = useSpace();
+  return isGroupKind(current?.kind) ? <GroupHome /> : <PersonalDashboard />;
 }

@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency } from "@/lib/space";
 import { formatDate, today } from "@/lib/dates";
 import { formatSigned, PAYMENT_METHODS, parseAmount } from "@/lib/format";
 import type {
@@ -144,8 +144,7 @@ function PendingItem({
 }
 
 export default function RecurringPage() {
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+  const currency = useCurrency();
   const { data: rules, reload: reloadRules } = useApi<RecurringRule[]>("/recurring/");
   const { data: pending, reload: reloadPending } = useApi<{
     created_count: number;

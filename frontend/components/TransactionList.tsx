@@ -5,21 +5,33 @@ import Link from "next/link";
 
 import { CategoryIcon } from "@/components/CategoryBadge";
 import { EmptyState } from "@/components/EmptyState";
+import { UserAvatar } from "@/components/UserAvatar";
 import { formatDayHeading } from "@/lib/dates";
 import { formatSigned, paymentMethodLabel } from "@/lib/format";
 import { MASK, useHidden } from "@/lib/privacy";
+import { useSpace } from "@/lib/space";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function TransactionRow({ tx }: { tx: Transaction }) {
   const category = tx.category_detail;
   const hidden = useHidden();
+  // In a shared space, each line shows who recorded it.
+  const shared = useSpace().current?.kind !== "personal";
   return (
     <Link
       href={`/transactions/${tx.id}/edit`}
       className="hover:bg-muted flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors"
     >
-      <CategoryIcon icon={category.icon} color={category.color} />
+      <span className="relative shrink-0">
+        <CategoryIcon icon={category.icon} color={category.color} />
+        {shared && tx.author && (
+          <UserAvatar
+            name={tx.author.username}
+            className="ring-background absolute -right-1 -bottom-1 size-5 text-[9px] ring-2"
+          />
+        )}
+      </span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{tx.description || category.name}</p>
         <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">

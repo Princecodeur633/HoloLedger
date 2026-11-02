@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from transactions.models import Transaction
+from spaces.services import personal_space
 
 from .models import Category
 
@@ -42,6 +43,6 @@ class CategoryApiTests(APITestCase):
 
     def test_delete_used_category_conflicts(self):
         cat = self.user.categories.get(name="Transport")
-        Transaction.objects.create(user=self.user, type="expense", amount=500, category=cat)
+        Transaction.objects.create(user=self.user, space=personal_space(self.user), type="expense", amount=500, category=cat)
         res = self.client.delete(f"/api/categories/{cat.id}/")
         self.assertEqual(res.status_code, 409)

@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     "imports",
     "reminders",
     "debts",
+    "spaces",
+    "groups",
 ]
 
 MIDDLEWARE = [
@@ -145,6 +147,13 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
+if not DEBUG:
+    # Production is served over HTTPS behind Vercel's proxy: trust its scheme header and
+    # never send the admin session / CSRF cookies over plain HTTP.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 
 # Vercel gives every frontend deployment its own URL (holo-ledger-<hash>-<team>.vercel.app),
@@ -156,6 +165,9 @@ CORS_ALLOWED_ORIGIN_REGEXES = env_list(
 )
 
 CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+
+# Public address of the app, used in invitation messages sent over WhatsApp.
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://holo-ledger-cimt.vercel.app")
 
 
 # Numbers typed without "+<country code>" are read as numbers of this country (ISO code).

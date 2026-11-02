@@ -8,6 +8,8 @@ from .models import Transaction
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    # Who recorded it: shown as "payé par" in shared spaces.
+    author = serializers.SerializerMethodField()
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.none())
     category_detail = CategorySerializer(source="category", read_only=True)
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.none(), required=False)
@@ -27,6 +29,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "account",
             "account_name",
             "recurring_rule",
+            "author",
             "source",
             "payment_method",
             "note",
@@ -35,12 +38,15 @@ class TransactionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "recurring_rule", "created_at", "updated_at"]
 
+    def get_author(self, tx):
+        return {"id": str(tx.user_id), "username": tx.user.username}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            self.fields["category"].queryset = Category.objects.filter(user=request.user)
-            self.fields["account"].queryset = Account.objects.filter(user=request.user)
+        space = self.context.get("space")
+        if space is not None:
+            self.fields["category"].queryset = Category.objects.filter(space=space)
+            self.fields["account"].queryset = Account.objects.filter(space=space)
 
     def validate(self, attrs):
         type_ = attrs.get("type", getattr(self.instance, "type", None))
@@ -52,7 +58,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        user = self.context["request"].user
-        validated_data.setdefault("currency", user.currency)
-        validated_data.setdefault("account", default_account(user))
+        user, space = self.context["request"].user, self.context["space"]
+        validated_data.setdefault("currency", space.currency)
+        validated_data.setdefault("account", default_account(space, user))
         return super().create(validated_data)

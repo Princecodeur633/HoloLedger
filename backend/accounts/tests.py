@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from transactions.models import Transaction
+from spaces.services import personal_space
 
 from .models import Account, Transfer
 
@@ -16,7 +17,7 @@ class AccountTests(APITestCase):
         self.client.force_authenticate(self.user)
         self.cash = self.user.accounts.get()  # created on sign-up
         self.momo = Account.objects.create(
-            user=self.user, name="MTN MoMo", type="mobile_money", initial_balance=50000
+            user=self.user, space=personal_space(self.user), name="MTN MoMo", type="mobile_money", initial_balance=50000
         )
         self.food = self.user.categories.get(name="Alimentation")
 
@@ -32,7 +33,7 @@ class AccountTests(APITestCase):
 
     def test_balances_include_initial_and_transfers(self):
         Transaction.objects.create(
-            user=self.user, type="expense", amount=5000, category=self.food, account=self.momo
+            user=self.user, space=personal_space(self.user), type="expense", amount=5000, category=self.food, account=self.momo
         )
         res = self.client.post(
             "/api/transfers/",
@@ -75,7 +76,7 @@ class AccountTests(APITestCase):
 
     def test_account_with_operations_cannot_be_deleted(self):
         Transaction.objects.create(
-            user=self.user, type="expense", amount=10, category=self.food, account=self.momo
+            user=self.user, space=personal_space(self.user), type="expense", amount=10, category=self.food, account=self.momo
         )
         self.assertEqual(self.client.delete(f"/api/accounts/{self.momo.id}/").status_code, 409)
         res = self.client.patch(f"/api/accounts/{self.momo.id}/", {"is_archived": True})

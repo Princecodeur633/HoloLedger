@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ListSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency } from "@/lib/space";
 import { formatDate, parseISODate, today } from "@/lib/dates";
 import { formatMoney, parseAmount } from "@/lib/format";
 import type { Goal, GoalContribution } from "@/lib/types";
@@ -93,8 +93,7 @@ function History({
 }
 
 export default function GoalsPage() {
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+  const currency = useCurrency();
   const { data: goals, reload } = useApi<Goal[]>("/goals/");
   const [draft, setDraft] = useState<GoalDraft | null>(null);
   const [movement, setMovement] = useState<Movement | null>(null);

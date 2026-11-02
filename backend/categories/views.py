@@ -2,21 +2,21 @@ from django.db.models import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
+from spaces.scoping import SpaceScopedMixin
+
 from .models import Category
 from .serializers import CategorySerializer
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(SpaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     filterset_fields = ["type"]
     pagination_class = None
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        return Category.objects.filter(user=self.request.user)
+        return Category.objects.filter(space=self.get_space())
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
         try:

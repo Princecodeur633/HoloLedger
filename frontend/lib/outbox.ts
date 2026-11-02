@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 
 import { api, ApiError, NetworkError } from "./api";
+import { getSpaceId } from "./space-store";
 import { readJSON, writeJSON } from "./storage";
 
 /** Writes made while offline, replayed in order once the server is reachable again. */
@@ -12,6 +13,8 @@ export interface OutboxItem {
   body: unknown;
   label: string;
   createdAt: string;
+  /** Space the write was made in: replayed there even if another space is open by then. */
+  space?: string | null;
 }
 
 const KEY = "holoLedger.outbox";
@@ -37,6 +40,7 @@ export function enqueue(path: string, body: unknown, label: string) {
     body,
     label,
     createdAt: new Date().toISOString(),
+    space: getSpaceId(),
   };
   write([...read(), item]);
 }
@@ -55,7 +59,11 @@ export function flushOutbox() {
     try {
       for (const item of read()) {
         try {
-          await api(item.path, { method: "POST", body: item.body });
+          await api(item.path, {
+            method: "POST",
+            body: item.body,
+            query: item.space ? { space: item.space } : undefined,
+          });
           sent++;
         } catch (err) {
           if (err instanceof NetworkError) break;

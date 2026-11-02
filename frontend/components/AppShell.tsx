@@ -7,6 +7,10 @@ import {
   FileUp,
   Goal,
   HandCoins,
+  Receipt,
+  Settings2,
+  Users,
+  Layers,
   History,
   Landmark,
   LayoutDashboard,
@@ -21,10 +25,14 @@ import { Fragment } from "react";
 
 import { Logo } from "@/components/Logo";
 import { OfflineBanner } from "@/components/OfflineSync";
+import { SpaceSwitcher } from "@/components/SpaceSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useAuth } from "@/lib/auth";
 import { formatPhone } from "@/lib/phone";
+import { isGroupKind } from "@/lib/group";
+import { useSpace } from "@/lib/space";
+import type { SpaceKind } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const MAIN_NAV = [
@@ -32,6 +40,19 @@ const MAIN_NAV = [
   { href: "/transactions", label: "Historique", icon: History },
   { href: "/reports", label: "Rapports", icon: ChartPie },
 ];
+
+/** Tontine / family: members and payments instead of accounts and operations. */
+const GROUP_NAV = [
+  { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
+  { href: "/group/payments", label: "Versements", icon: History },
+  { href: "/group/members", label: "Membres", icon: Users },
+];
+
+const COMMON_MORE = ["/spaces", "/guide", "/settings"];
+
+export function mainNav(kind: SpaceKind | undefined) {
+  return isGroupKind(kind) ? GROUP_NAV : MAIN_NAV;
+}
 
 /** Secondary pages: in the sidebar on desktop, behind "Plus" on mobile. */
 export const MORE_NAV = [
@@ -51,6 +72,7 @@ export const MORE_NAV = [
     description: "Loyer, salaire, abonnements",
   },
   { href: "/import", label: "Importer", icon: FileUp, description: "Relevé bancaire, SMS" },
+  { href: "/spaces", label: "Mes espaces", icon: Layers, description: "Perso, couple, business" },
   { href: "/guide", label: "Guide", icon: BookOpen, description: "Comment utiliser l’app" },
   {
     href: "/settings",
@@ -60,14 +82,43 @@ export const MORE_NAV = [
   },
 ];
 
-const NAV = [...MAIN_NAV, ...MORE_NAV];
-const MOBILE_NAV = [...MAIN_NAV, { href: "/more", label: "Plus", icon: Ellipsis }];
+/** Menu of the current space: no debts in a couple, "clients et fournisseurs" in a business. */
+export function moreNav(kind: SpaceKind | undefined) {
+  if (isGroupKind(kind)) {
+    return [
+      {
+        href: "/group/rules",
+        label: "Règles",
+        icon: Settings2,
+        description: "Montant, rythme, délai, pénalité",
+      },
+      ...(kind === "family"
+        ? [
+            {
+              href: "/group/expenses",
+              label: "Dépenses",
+              icon: Receipt,
+              description: "À quoi l’argent a servi",
+            },
+          ]
+        : []),
+      ...MORE_NAV.filter((item) => COMMON_MORE.includes(item.href)),
+    ];
+  }
+  return MORE_NAV.filter((item) => !(kind === "couple" && item.href === "/debts")).map((item) =>
+    item.href === "/debts" && kind === "business"
+      ? { ...item, label: "Clients et fournisseurs", description: "Qui me doit, à qui je dois" }
+      : item,
+  );
+}
 
-function isActive(pathname: string, href: string) {
+const MORE_TAB = { href: "/more", label: "Plus", icon: Ellipsis };
+
+function isActive(pathname: string, href: string, kind: SpaceKind | undefined) {
   if (href === "/transactions") return pathname === href;
   if (href === "/more")
     return (
-      MORE_NAV.some((item) => pathname.startsWith(item.href)) ||
+      moreNav(kind).some((item) => pathname.startsWith(item.href)) ||
       pathname === href ||
       pathname === "/profile"
     );
@@ -77,6 +128,13 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { current } = useSpace();
+  const kind = current?.kind;
+  const nav = [...mainNav(kind), ...moreNav(kind)];
+  const mobileNav = [...mainNav(kind), MORE_TAB];
+  // The "+" records a payment in a group, an operation elsewhere.
+  const addHref = isGroupKind(kind) ? "/group/pay" : "/transactions/new";
+  const addLabel = isGroupKind(kind) ? "Verser une cotisation" : "Ajouter une opération";
 
   return (
     <div className="flex min-h-dvh">
@@ -85,19 +143,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold">
           <Logo className="size-8" priority /> HoloLedger
         </Link>
+        <SpaceSwitcher className="mb-4 w-full justify-start" />
         <Link
-          href="/transactions/new"
+          href={addHref}
           className="bg-primary text-primary-foreground hover:bg-primary/85 mb-4 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium"
         >
-          <Plus className="size-4" /> Ajouter une opération
+          <Plus className="size-4" /> {addLabel}
         </Link>
-        {NAV.map(({ href, label, icon: Icon }) => (
+        {nav.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-              isActive(pathname, href)
+              isActive(pathname, href, kind)
                 ? "bg-primary/10 text-primary font-medium"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
@@ -131,21 +190,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="print:hidden">
           <OfflineBanner />
         </div>
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-28 md:px-8 md:pt-8 md:pb-10 print:p-0">
+        {/* Mobile top bar: which space you are in, always in sight. */}
+        <div className="bg-background/95 sticky top-0 z-20 flex items-center gap-2 border-b px-4 py-2 backdrop-blur md:hidden print:hidden">
+          <Logo className="size-7" />
+          <SpaceSwitcher className="min-w-0" />
+        </div>
+        {/* Switching space remounts the pages, so every screen reloads its data. */}
+        <main
+          key={current?.id ?? "personal"}
+          className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-28 md:px-8 md:pt-8 md:pb-10 print:p-0"
+        >
           {children}
         </main>
       </div>
 
       {/* Mobile bottom navigation, with the main action ("+") in the middle. */}
       <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden">
-        {MOBILE_NAV.map(({ href, label, icon: Icon }, index) => (
+        {mobileNav.map(({ href, label, icon: Icon }, index) => (
           <Fragment key={href}>
             {index === 2 && (
               <div className="flex items-start justify-center">
                 <Link
-                  href="/transactions/new"
-                  aria-label="Ajouter une opération"
-                  aria-current={pathname === "/transactions/new" ? "page" : undefined}
+                  href={addHref}
+                  aria-label={addLabel}
+                  aria-current={pathname === addHref ? "page" : undefined}
                   className="bg-primary text-primary-foreground ring-background -mt-5 flex size-14 items-center justify-center rounded-full shadow-lg ring-4 transition-transform active:scale-95"
                 >
                   <Plus className="size-6" />
@@ -156,7 +224,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href={href}
               className={cn(
                 "relative flex flex-col items-center gap-1 py-2.5 text-[11px]",
-                isActive(pathname, href) ? "text-primary font-medium" : "text-muted-foreground",
+                isActive(pathname, href, kind)
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground",
               )}
             >
               <Icon className="size-5" />

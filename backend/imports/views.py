@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from accounts.models import Account, default_account
 from categories.models import Category
+from spaces.services import request_space
 from transactions.models import Transaction
 
 from .parsing import MAX_ROWS, ParseError, guess_mapping, normalize_row, read_table
@@ -67,19 +68,19 @@ class CommitView(APIView):
         payload = CommitSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
-        user = request.user
+        user, space = request.user, request_space(request)
 
         if data.get("account"):
-            account = Account.objects.filter(user=user, pk=data["account"]).first()
+            account = Account.objects.filter(space=space, pk=data["account"]).first()
             if not account:
                 return Response({"account": ["Compte introuvable."]}, status=400)
         else:
-            account = default_account(user)
+            account = default_account(space, user)
 
-        categories = {c.id: c for c in Category.objects.filter(user=user)}
-        suggester = CategorySuggester(user)
+        categories = {c.id: c for c in Category.objects.filter(space=space)}
+        suggester = CategorySuggester(space)
         existing = set(
-            Transaction.objects.filter(user=user, account=account).values_list(
+            Transaction.objects.filter(space=space, account=account).values_list(
                 "date", "amount", "type"
             )
         )
@@ -118,9 +119,10 @@ class CommitView(APIView):
         to_create = [
             Transaction(
                 user=user,
+                space=space,
                 type=item["type"],
                 amount=item["amount"],
-                currency=user.currency,
+                currency=space.currency,
                 date=item["date"],
                 description=item["description"],
                 category=categories[item["category"]],
@@ -160,9 +162,9 @@ class SmsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = request.user
+        space = request_space(request)
         account = None
-        mobile_accounts = user.accounts.filter(type=Account.Type.MOBILE_MONEY, is_archived=False)
+        mobile_accounts = space.accounts.filter(type=Account.Type.MOBILE_MONEY, is_archived=False)
         if parsed["operator"]:
             keywords = {"mtn": ("mtn", "momo"), "orange": ("orange", "om")}[parsed["operator"]]
             account = next(
@@ -172,7 +174,7 @@ class SmsView(APIView):
 
         category = None
         if parsed["kind"] in ("income", "expense"):
-            category = CategorySuggester(user).suggest(parsed["counterparty"] or "", parsed["kind"])
+            category = CategorySuggester(space).suggest(parsed["counterparty"] or "", parsed["kind"])
 
         return Response(
             {

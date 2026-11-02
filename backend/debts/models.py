@@ -21,6 +21,9 @@ class Debt(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="debts"
     )
+    space = models.ForeignKey(
+        "spaces.Space", on_delete=models.CASCADE, related_name="debts"
+    )
     direction = models.CharField(max_length=10, choices=Direction.choices)
     person = models.CharField(max_length=80)
     amount = models.DecimalField(

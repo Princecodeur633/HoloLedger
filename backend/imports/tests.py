@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from rest_framework.test import APITestCase
 
 from transactions.models import Transaction
+from spaces.services import personal_space
 
 from .parsing import guess_mapping, parse_amount, parse_date
 from .sms import parse_sms
@@ -131,7 +132,7 @@ class ImportApiTests(APITestCase):
     def test_sms_endpoint_suggests_account_and_category(self):
         from accounts.models import Account
 
-        momo = Account.objects.create(user=self.user, name="MTN MoMo", type="mobile_money")
+        momo = Account.objects.create(user=self.user, space=personal_space(self.user), name="MTN MoMo", type="mobile_money")
         res = self.client.post(
             "/api/imports/sms/",
             {"text": "MTN MoMo: Vous avez payé 2 500 FCFA à PHARMACIE DU LAC. Frais 0 FCFA."},

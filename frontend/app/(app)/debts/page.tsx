@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency, useSpace } from "@/lib/space";
 import { formatDate, today } from "@/lib/dates";
 import { formatMoney, parseAmount } from "@/lib/format";
 import { MASK, useHidden } from "@/lib/privacy";
@@ -28,10 +28,25 @@ import type { Debt, DebtDirection } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
-const TABS: { value: DebtDirection; label: string; empty: string }[] = [
-  { value: "lent", label: "On me doit", empty: "Personne ne vous doit d’argent." },
-  { value: "borrowed", label: "Je dois", empty: "Vous ne devez rien à personne." },
-];
+function tabs(business: boolean): { value: DebtDirection; label: string; empty: string }[] {
+  return business
+    ? [
+        {
+          value: "lent",
+          label: "Clients (on me doit)",
+          empty: "Aucun client ne vous doit d’argent.",
+        },
+        {
+          value: "borrowed",
+          label: "Fournisseurs (je dois)",
+          empty: "Vous ne devez rien à vos fournisseurs.",
+        },
+      ]
+    : [
+        { value: "lent", label: "On me doit", empty: "Personne ne vous doit d’argent." },
+        { value: "borrowed", label: "Je dois", empty: "Vous ne devez rien à personne." },
+      ];
+}
 
 type Draft = {
   id?: string;
@@ -48,8 +63,9 @@ function errorText(err: unknown) {
 }
 
 export default function DebtsPage() {
-  const { user } = useAuth();
-  const currency = user?.currency ?? "XAF";
+  const business = useSpace().current?.kind === "business";
+  const TABS = tabs(business);
+  const currency = useCurrency();
   const hidden = useHidden();
   const money = (v: string | number) => (hidden ? MASK : formatMoney(v, currency));
   const { data: debts, reload } = useApi<Debt[]>("/debts/");
@@ -217,7 +233,7 @@ export default function DebtsPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Dettes et prêts"
+        title={business ? "Clients et fournisseurs" : "Dettes et prêts"}
         action={
           <Button variant="outline" onClick={openNew}>
             <Plus /> Ajouter
@@ -291,8 +307,8 @@ export default function DebtsPage() {
               <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
                 {(
                   [
-                    ["lent", "J’ai prêté"],
-                    ["borrowed", "J’ai emprunté"],
+                    ["lent", business ? "Un client me doit" : "J’ai prêté"],
+                    ["borrowed", business ? "Je dois à un fournisseur" : "J’ai emprunté"],
                   ] as const
                 ).map(([value, label]) => (
                   <button

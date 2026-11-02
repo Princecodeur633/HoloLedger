@@ -9,20 +9,21 @@ import { ReminderToggle } from "@/components/ReminderToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, ApiError } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useCurrency, useSpace } from "@/lib/space";
 import { CURRENCIES } from "@/lib/format";
-import type { User } from "@/lib/types";
 
 export default function SettingsPage() {
-  const { user, setUser } = useAuth();
+  const { current, reload } = useSpace();
+  const currency = useCurrency();
   const [saving, setSaving] = useState(false);
 
-  /** A single select, so the currency is saved as soon as it changes. */
-  async function saveCurrency(currency: string) {
+  /** A single select, so the currency is saved as soon as it changes (for the current space). */
+  async function saveCurrency(value: string) {
+    if (!current) return;
     setSaving(true);
     try {
-      const updated = await api<User>("/auth/me/", { method: "PATCH", body: { currency } });
-      setUser(updated);
+      await api(`/spaces/${current.id}/`, { method: "PATCH", body: { currency: value } });
+      reload();
       toast.success("Devise mise à jour");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Enregistrement impossible.");
@@ -58,16 +59,18 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Devise</CardTitle>
+          <CardTitle>
+            Devise {current && current.kind !== "personal" && `de « ${current.name} »`}
+          </CardTitle>
           <CardDescription>
-            S’applique aux nouvelles opérations et à l’affichage des totaux.
+            Propre à chaque espace. S’applique aux nouvelles opérations et aux totaux.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <select
             id="currency"
             aria-label="Devise"
-            value={user?.currency ?? "XAF"}
+            value={currency}
             disabled={saving}
             onChange={(e) => saveCurrency(e.target.value)}
             className="border-input dark:bg-input/30 h-9 w-full max-w-sm rounded-lg border bg-transparent px-2.5 text-sm"
