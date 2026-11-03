@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
 import { Field } from "@/components/form";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SpaceIcon } from "@/components/SpaceIcon";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ function errorText(err: unknown) {
   return err instanceof ApiError ? err.message : OFFLINE_MESSAGE;
 }
 
-const WHATSAPP = "bg-[#25D366] text-white hover:bg-[#1ebe5b]";
+const WHATSAPP = "";
 
 function SpaceSettings({ space }: { space: Space }) {
   const router = useRouter();
@@ -127,12 +128,14 @@ function SpaceSettings({ space }: { space: Space }) {
                 key={icon}
                 type="button"
                 onClick={() => setForm({ ...form, icon })}
+                aria-label="Choisir cette icône"
                 className={cn(
-                  "flex size-10 items-center justify-center rounded-full border text-lg",
-                  form.icon === icon && "ring-foreground ring-2",
+                  "rounded-full",
+                  form.icon === icon &&
+                    "ring-foreground ring-offset-background ring-2 ring-offset-2",
                 )}
               >
-                {icon}
+                <SpaceIcon icon={icon} />
               </button>
             ))}
           </div>
@@ -268,7 +271,7 @@ export default function SpaceSettingsPage() {
   return (
     <div>
       <PageHeader
-        title={space ? `${space.icon} ${space.name}` : "Espace"}
+        title={space?.name ?? "Espace"}
         action={
           <Button variant="ghost" size="sm" onClick={() => router.push("/spaces")}>
             <ChevronLeft /> Mes espaces

@@ -164,3 +164,18 @@ class SpacesTests(APITestCase):
         )
         self.assertEqual(res.status_code, 201, res.data)
         self.assertEqual(res.data["period"], "quarter")
+
+    def test_notifications_across_spaces(self):
+        couple = self.create_space(self.awa, "couple")
+        self.as_(self.awa).post(f"/api/spaces/{couple['id']}/invite/", {"phone": self.paul.phone}, format="json")
+        tontine = self.create_space(self.paul, "tontine", "Tontine")
+        me = self.as_(self.paul).get(f"/api/group/?space={tontine['id']}").data["members"][0]
+        self.as_(self.paul).post(
+            f"/api/group/contributions/?space={tontine['id']}", {"member": me["id"], "amount": "5"}, format="json"
+        )
+        # Paul (manager) recorded it himself, so it's validated: nothing to validate.
+        data = self.as_(self.paul).get("/api/notifications/").data
+        texts = [i["text"] for i in data["items"]]
+        self.assertIn("1 invitation à rejoindre un espace", texts)
+        self.assertFalse(any("à valider" in t for t in texts))
+

@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
               rel="noopener noreferrer"
               className={buttonVariants({
                 size: "lg",
-                className: "h-10 bg-[#25D366] text-white hover:bg-[#1ebe5b]",
+                className: "h-10",
               })}
             >
               <MessageCircle /> Ouvrir WhatsApp

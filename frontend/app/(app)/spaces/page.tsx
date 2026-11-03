@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
 import { Field } from "@/components/form";
+import { SpaceIcon } from "@/components/SpaceIcon";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -133,9 +134,7 @@ export default function SpacesPage() {
           <h2 className="text-sm font-semibold">Invitations reçues</h2>
           {invitations.map((inv) => (
             <div key={inv.id} className="bg-card flex items-center gap-3 rounded-xl border p-3">
-              <span className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-full text-lg">
-                {inv.space.icon}
-              </span>
+              <SpaceIcon icon={inv.space.icon} kind={inv.space.kind} />
               <p className="min-w-0 flex-1 text-sm">
                 <span className="font-medium">{inv.inviter}</span> vous invite dans l’espace{" "}
                 <span className="font-medium">« {inv.space.name} »</span>
@@ -178,9 +177,7 @@ export default function SpacesPage() {
                 onClick={() => open(space)}
                 className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
-                <span className="bg-muted flex size-11 shrink-0 items-center justify-center rounded-full text-xl">
-                  {space.icon}
-                </span>
+                <SpaceIcon icon={space.icon} kind={space.kind} className="size-11" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{space.name}</span>
                   <span className="text-muted-foreground block truncate text-xs">
@@ -226,9 +223,7 @@ export default function SpacesPage() {
               }
               className="bg-card hover:bg-muted flex items-center gap-3 rounded-xl border p-3 text-left transition-colors disabled:opacity-50"
             >
-              <span className="bg-muted flex size-11 shrink-0 items-center justify-center rounded-full text-xl">
-                {SPACE_KINDS[option.kind].icon}
-              </span>
+              <SpaceIcon kind={option.kind} className="size-11" />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{option.title}</span>
                 <span className="text-muted-foreground block text-xs">
@@ -273,12 +268,14 @@ export default function SpacesPage() {
                       key={icon}
                       type="button"
                       onClick={() => setDraft({ ...draft, icon })}
+                      aria-label="Choisir cette icône"
                       className={cn(
-                        "flex size-10 items-center justify-center rounded-full border text-lg",
-                        draft.icon === icon && "ring-foreground ring-2",
+                        "rounded-full",
+                        draft.icon === icon &&
+                          "ring-foreground ring-offset-background ring-2 ring-offset-2",
                       )}
                     >
-                      {icon}
+                      <SpaceIcon icon={icon} />
                     </button>
                   ))}
                 </div>

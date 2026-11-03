@@ -28,11 +28,14 @@ export function AuthForm({
   submitLabel,
   onSubmit,
   footer,
+  next = "/dashboard",
 }: {
   fields: AuthField[];
   submitLabel: string;
   onSubmit: (values: Record<string, string>) => Promise<void>;
   footer: { text: string; href: string; link: string };
+  /** Where to go once signed in (sign-up goes to the welcome choice). */
+  next?: string;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -47,7 +50,7 @@ export function AuthForm({
     setOffline(false);
     try {
       await onSubmit(values);
-      router.replace("/dashboard");
+      router.replace(next);
     } catch (err) {
       if (err instanceof ApiError) setError(err);
       else setOffline(true);

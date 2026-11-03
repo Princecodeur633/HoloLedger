@@ -53,7 +53,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 1. Touchez **+** en bas de l'écran.
 2. Choisissez **Dépense** ou **Revenu**, tapez le **montant**.
 3. Touchez une **catégorie**, puis **Enregistrer**.
-💡 L'app propose le montant habituel de la catégorie. « Plus de détails » permet de changer la date, le compte ou d'ajouter une note.
+💡 En haut, **Dans …** montre l'espace où l'opération sera notée (touchez pour changer). L'app propose aussi le montant habituel de la catégorie.
 [Noter une opération](/transactions/new)
 
 ## 📩 Remplir depuis un SMS Mobile Money
@@ -171,7 +171,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 2. Ajoutez les **membres** : invitez ceux qui ont l'app, ajoutez les autres au **carnet**.
 3. Chacun touche **+ → J'ai versé** ; le gestionnaire **valide** ou **refuse**.
 4. Quand la séance est payée : **Cagnotte remise à …**, et on passe au suivant.
-💡 Vert payé · orange à valider · rouge en retard. **Tirer au sort l'ordre** est dans Membres.
+💡 Vert payé · orange à valider · rouge en retard. **Partager le point sur WhatsApp** envoie le récapitulatif au groupe.
 [Mes espaces](/spaces)
 
 ## 👨‍👩‍👧 Caisse familiale
@@ -233,6 +233,14 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 2. Entrez votre numéro, touchez **Ouvrir WhatsApp** et envoyez le message prêt.
 3. Tapez le code reçu et choisissez un nouveau mot de passe.
 💡 Si l'option n'est pas disponible, contactez l'administrateur.
+
+## 🔔 Notifications
+> La cloche en haut : tout ce qui vous attend, dans tous vos espaces.
+**Pourquoi :** ne rien oublier : invitations, versements à valider, cotisations dues, budgets dépassés.
+**Comment :**
+1. Touchez la **cloche** (le chiffre indique combien de choses vous attendent).
+2. Touchez une ligne : l'app ouvre le bon espace, au bon écran.
+💡 Avec le **rappel du soir** activé, vous recevez aussi ces alertes sur le téléphone.
 
 ## 🌗 Mode clair ou sombre
 > L'app suit le réglage de votre téléphone, ou votre choix.

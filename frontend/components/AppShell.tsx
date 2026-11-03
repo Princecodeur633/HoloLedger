@@ -20,10 +20,11 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Fragment } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Fragment, useEffect } from "react";
 
 import { Logo } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 import { OfflineBanner } from "@/components/OfflineSync";
 import { SpaceSwitcher } from "@/components/SpaceSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -55,35 +56,76 @@ export function mainNav(kind: SpaceKind | undefined) {
 }
 
 /** Secondary pages: in the sidebar on desktop, behind "Plus" on mobile. */
-export const MORE_NAV = [
-  { href: "/accounts", label: "Comptes", icon: Landmark, description: "Soldes et transferts" },
-  { href: "/budgets", label: "Budgets", icon: PiggyBank, description: "Limites mensuelles" },
-  { href: "/goals", label: "Objectifs", icon: Goal, description: "Épargne" },
+export type Section = "Mon argent" | "Outils" | "Groupe" | "L’app";
+
+export const MORE_NAV: {
+  href: string;
+  label: string;
+  icon: typeof Landmark;
+  description: string;
+  section: Section;
+}[] = [
+  {
+    href: "/accounts",
+    label: "Comptes",
+    icon: Landmark,
+    description: "Soldes et transferts",
+    section: "Mon argent",
+  },
+  {
+    href: "/budgets",
+    label: "Budgets",
+    icon: PiggyBank,
+    description: "Limites par période",
+    section: "Mon argent",
+  },
+  { href: "/goals", label: "Objectifs", icon: Goal, description: "Épargne", section: "Mon argent" },
   {
     href: "/debts",
     label: "Dettes et prêts",
     icon: HandCoins,
     description: "Qui me doit, à qui je dois",
+    section: "Mon argent",
   },
   {
     href: "/recurring",
     label: "Récurrentes",
     icon: Repeat,
     description: "Loyer, salaire, abonnements",
+    section: "Mon argent",
   },
-  { href: "/import", label: "Importer", icon: FileUp, description: "Relevé bancaire, SMS" },
-  { href: "/spaces", label: "Mes espaces", icon: Layers, description: "Perso, couple, business" },
-  { href: "/guide", label: "Guide", icon: BookOpen, description: "Comment utiliser l’app" },
+  {
+    href: "/import",
+    label: "Importer",
+    icon: FileUp,
+    description: "Relevé bancaire, SMS",
+    section: "Outils",
+  },
+  {
+    href: "/spaces",
+    label: "Mes espaces",
+    icon: Layers,
+    description: "Perso, couple, business, tontine, famille",
+    section: "L’app",
+  },
+  {
+    href: "/guide",
+    label: "Guide",
+    icon: BookOpen,
+    description: "Comment utiliser l’app",
+    section: "L’app",
+  },
   {
     href: "/settings",
     label: "Paramètres",
     icon: Settings,
-    description: "Thème, devise, catégories",
+    description: "Thème, devise, rappel, catégories",
+    section: "L’app",
   },
 ];
 
 /** Menu of the current space: no debts in a couple, "clients et fournisseurs" in a business. */
-export function moreNav(kind: SpaceKind | undefined) {
+export function moreNav(kind: SpaceKind | undefined): typeof MORE_NAV {
   if (isGroupKind(kind)) {
     return [
       {
@@ -91,6 +133,7 @@ export function moreNav(kind: SpaceKind | undefined) {
         label: "Règles",
         icon: Settings2,
         description: "Montant, rythme, délai, pénalité",
+        section: "Groupe",
       },
       ...(kind === "family"
         ? [
@@ -99,6 +142,7 @@ export function moreNav(kind: SpaceKind | undefined) {
               label: "Dépenses",
               icon: Receipt,
               description: "À quoi l’argent a servi",
+              section: "Groupe" as const,
             },
           ]
         : []),
@@ -112,7 +156,22 @@ export function moreNav(kind: SpaceKind | undefined) {
   );
 }
 
+const sectionOf = (item: object | undefined) =>
+  item && "section" in item ? (item.section as Section) : undefined;
+
 const MORE_TAB = { href: "/more", label: "Plus", icon: Ellipsis };
+
+/** Screens about accounts and operations, absent from tontine / family spaces. */
+const MONEY_ONLY = [
+  "/transactions",
+  "/reports",
+  "/accounts",
+  "/budgets",
+  "/goals",
+  "/debts",
+  "/recurring",
+  "/import",
+];
 
 function isActive(pathname: string, href: string, kind: SpaceKind | undefined) {
   if (href === "/transactions") return pathname === href;
@@ -136,6 +195,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const addHref = isGroupKind(kind) ? "/group/pay" : "/transactions/new";
   const addLabel = isGroupKind(kind) ? "Verser une cotisation" : "Ajouter une opération";
 
+  // A screen that does not exist in this kind of space (e.g. "new operation" in a tontine)
+  // sends to the matching one instead of showing an empty or broken page.
+  const router = useRouter();
+  useEffect(() => {
+    if (!kind) return;
+    const group = isGroupKind(kind);
+    if (group && pathname === "/transactions/new") router.replace("/group/pay");
+    else if (group && MONEY_ONLY.some((p) => pathname.startsWith(p))) router.replace("/dashboard");
+    else if (!group && pathname.startsWith("/group/")) router.replace("/dashboard");
+  }, [kind, pathname, router]);
+
   return (
     <div className="flex min-h-dvh">
       {/* Desktop sidebar */}
@@ -143,6 +213,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold">
           <Logo className="size-8" priority /> HoloLedger
         </Link>
+        <NotificationBell className="absolute top-4 right-3" />
         <SpaceSwitcher className="mb-4 w-full justify-start" />
         <Link
           href={addHref}
@@ -150,20 +221,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         >
           <Plus className="size-4" /> {addLabel}
         </Link>
-        {nav.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-              isActive(pathname, href, kind)
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" /> {label}
-          </Link>
-        ))}
+        {nav.map(({ href, label, icon: Icon }, index) => {
+          const section = sectionOf(nav[index]);
+          const showTitle = section && section !== sectionOf(nav[index - 1]);
+          return (
+            <Fragment key={href}>
+              {showTitle && (
+                <p className="text-muted-foreground mt-3 px-3 pb-1 text-[11px] font-medium tracking-wide uppercase">
+                  {section}
+                </p>
+              )}
+              <Link
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  isActive(pathname, href, kind)
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4" /> {label}
+              </Link>
+            </Fragment>
+          );
+        })}
         <div className="mt-auto flex flex-col gap-3 pt-4">
           {user && (
             <Link
@@ -194,6 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="bg-background/95 sticky top-0 z-20 flex items-center gap-2 border-b px-4 py-2 backdrop-blur md:hidden print:hidden">
           <Logo className="size-7" />
           <SpaceSwitcher className="min-w-0" />
+          <NotificationBell className="ml-auto" />
         </div>
         {/* Switching space remounts the pages, so every screen reloads its data. */}
         <main

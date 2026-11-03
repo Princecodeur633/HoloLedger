@@ -318,8 +318,8 @@ function AccountsContent() {
                 <ArrowLeftRight className="text-muted-foreground size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
-                    {t.from_space && `${t.from_space.icon} `}
-                    {t.from_account_name} → {t.to_space && `${t.to_space.icon} `}
+                    {t.from_space && `${t.from_space.name} · `}
+                    {t.from_account_name} → {t.to_space && `${t.to_space.name} · `}
                     {t.to_account_name}
                   </p>
                   <p className="text-muted-foreground text-xs">
@@ -475,7 +475,7 @@ function AccountsContent() {
                     }
                   >
                     <option value="">Choisir…</option>
-                    <optgroup label={`${current?.icon ?? ""} Cet espace`}>
+                    <optgroup label="Cet espace">
                       {active.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name}
@@ -483,7 +483,7 @@ function AccountsContent() {
                       ))}
                     </optgroup>
                     {otherSpaces.map((space) => (
-                      <optgroup key={space.id} label={`${space.icon} ${space.name}`}>
+                      <optgroup key={space.id} label={space.name}>
                         {space.accounts.map((a) => (
                           <option key={a.id} value={a.id}>
                             {a.name}

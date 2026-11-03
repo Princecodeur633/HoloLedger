@@ -1,7 +1,38 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react";
+import {
+  ArrowLeftRight,
+  BellRing,
+  BookOpen,
+  Briefcase,
+  ChartPie,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CirclePlus,
+  FileDown,
+  HandCoins,
+  HeartHandshake,
+  House,
+  KeyRound,
+  Layers,
+  Lightbulb,
+  type LucideIcon,
+  MessageSquareText,
+  PencilLine,
+  PiggyBank,
+  RefreshCw,
+  Repeat,
+  Rocket,
+  Search,
+  Smartphone,
+  SunMoon,
+  Target,
+  User,
+  Users,
+  Wallet,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Fragment } from "react";
+import { createElement, Fragment } from "react";
 
 import { Logo } from "@/components/Logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,6 +42,38 @@ export const metadata: Metadata = {
   title: "Guide — HoloLedger",
   description: "Comment utiliser HoloLedger, fiche par fiche.",
 };
+
+/** Guide cards keep an emoji in guide.md (easy to edit) but show a matching line icon. */
+const GLYPHS: Record<string, LucideIcon> = {
+  "🐺": Wallet,
+  "👤": User,
+  "🚀": Rocket,
+  "➕": CirclePlus,
+  "📩": MessageSquareText,
+  "✏️": PencilLine,
+  "🏠": House,
+  "🔎": Search,
+  "🔁": Repeat,
+  "🎯": Target,
+  "🐷": PiggyBank,
+  "🤝": HandCoins,
+  "💸": ArrowLeftRight,
+  "🗂️": Layers,
+  "💑": HeartHandshake,
+  "💼": Briefcase,
+  "🔄": RefreshCw,
+  "👨‍👩‍👧": Users,
+  "🔀": ArrowLeftRight,
+  "📊": ChartPie,
+  "📥": FileDown,
+  "📱": Smartphone,
+  "🔔": BellRing,
+  "🔑": KeyRound,
+  "🌗": SunMoon,
+};
+
+const glyph = (emoji: string, className: string) =>
+  createElement(GLYPHS[emoji] ?? BookOpen, { className, strokeWidth: 1.75, "aria-hidden": true });
 
 /** **bold** → <strong>: the only markdown used inside the guide's sentences. */
 function Text({ children }: { children: string }) {
@@ -46,9 +109,9 @@ export default function GuidePage() {
           <a
             key={s.id}
             href={`#${s.id}`}
-            className="hover:bg-muted rounded-full border px-3 py-1 text-xs transition-colors"
+            className="hover:bg-muted inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors"
           >
-            {s.emoji} {s.title}
+            {glyph(s.emoji, "size-3.5")} {s.title}
           </a>
         ))}
       </nav>
@@ -62,8 +125,8 @@ export default function GuidePage() {
             className="group bg-card scroll-mt-4 rounded-xl border"
           >
             <summary className="flex cursor-pointer list-none items-center gap-3 p-4">
-              <span className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-full text-lg">
-                {s.emoji}
+              <span className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-full">
+                {glyph(s.emoji, "size-[18px]")}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{s.title}</span>

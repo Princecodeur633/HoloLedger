@@ -55,7 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useServiceWorker();
   useUpdateNotice();
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
         <SpaceProvider>{children}</SpaceProvider>
         <OfflineSync />

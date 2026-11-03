@@ -7,8 +7,8 @@ export const STATUS: Record<GroupStatus, { label: string; dot: string; chip: str
   paid: { label: "Payé", dot: "bg-income", chip: "bg-income/10 text-income" },
   pending: {
     label: "À valider",
-    dot: "bg-amber-500",
-    chip: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    dot: "bg-warning",
+    chip: "bg-warning/15 text-warning",
   },
   due: { label: "À payer", dot: "bg-foreground/40", chip: "bg-muted text-foreground" },
   late: { label: "En retard", dot: "bg-expense", chip: "bg-expense/10 text-expense" },
@@ -117,3 +117,37 @@ export interface GroupExpense {
 }
 
 export const isGroupKind = (kind: string | undefined) => kind === "tontine" || kind === "family";
+
+/** Ready-to-send WhatsApp summary of the current session / month, for the group chat. */
+export function shareText(
+  board: GroupBoard,
+  spaceName: string,
+  money: (v: string | number) => string,
+  date: (iso: string) => string,
+) {
+  const period = board.current_period;
+  const at = period ? board.periods.findIndex((p) => p.index === period.index) : -1;
+  const names = (status: GroupStatus) =>
+    board.members.filter((m) => at >= 0 && m.statuses[at] === status).map((m) => m.name);
+  const lines = [`*${spaceName}*`];
+  if (period) {
+    if (board.kind === "tontine") {
+      lines.push(`Séance ${period.index} · ${date(period.date)}`);
+      if (period.beneficiary) lines.push(`🍽️ C’est ${period.beneficiary.name} qui mange`);
+    } else {
+      lines.push(`Cotisations du ${date(period.date)}`);
+    }
+    lines.push(`💰 ${money(period.collected)} sur ${money(period.expected)}`, "");
+  }
+  const groups: [string, string[]][] = [
+    ["✅ Payé", names("paid")],
+    ["⏳ À valider", names("pending")],
+    ["🔴 En retard", names("late")],
+    ["⚪ À payer", names("due")],
+  ];
+  for (const [label, list] of groups) if (list.length) lines.push(`${label} : ${list.join(", ")}`);
+  if (period) lines.push("", `Date limite : ${date(period.deadline)}`);
+  if (board.kind === "family") lines.push(`En caisse : ${money(board.totals.cash)}`);
+  lines.push("", "Suivi sur HoloLedger");
+  return lines.join("\n");
+}

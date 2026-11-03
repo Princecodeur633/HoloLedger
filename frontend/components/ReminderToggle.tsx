@@ -113,7 +113,8 @@ export function ReminderToggle() {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground text-sm">
-        Une notification chaque soir à 19 h, seulement les jours où vous n’avez rien noté.
+        Une notification chaque soir à 19 h si vous n’avez rien noté, avec vos cotisations dues ou
+        en retard et les versements à valider.
       </p>
       {subscribed ? (
         <Button variant="outline" className="self-start" onClick={disable} disabled={busy}>

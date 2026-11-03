@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
 import { SmsParser } from "@/components/SmsParser";
+import { SpaceSwitcher } from "@/components/SpaceSwitcher";
 import { TransactionForm } from "@/components/TransactionForm";
 import { Button } from "@/components/ui/button";
 import { api, NetworkError } from "@/lib/api";
@@ -49,6 +50,12 @@ export default function NewTransactionPage() {
           </Button>
         }
       />
+
+      {/* Where this operation goes: visible, and changeable in one tap. */}
+      <div className="mb-4 flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Dans</span>
+        <SpaceSwitcher />
+      </div>
 
       {showSms ? (
         <div className="mb-5">

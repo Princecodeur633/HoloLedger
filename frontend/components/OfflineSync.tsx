@@ -58,10 +58,7 @@ export function OfflineBanner() {
   const pending = useOutbox().length;
   if (online && pending === 0) return null;
   return (
-    <div
-      role="status"
-      className="bg-amber-100 px-4 py-2 text-center text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-    >
+    <div role="status" className="bg-warning/15 text-foreground px-4 py-2 text-center text-xs">
       {online ? "Synchronisation en cours… " : "Hors ligne — les données affichées peuvent dater. "}
       {pending > 0 && `${pending} opération${pending > 1 ? "s" : ""} en attente d’envoi.`}
     </div>

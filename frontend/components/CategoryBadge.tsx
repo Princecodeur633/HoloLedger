@@ -88,13 +88,16 @@ export function CategoryIcon({
   className?: string;
 }) {
   const Icon = CATEGORY_ICONS[icon] ?? Tag;
+  // Neutral disc for every category: only the icon keeps a hint of the category color,
+  // so lists stay calm (full colors are kept for the charts, where they help reading).
   return (
     <span
       className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center rounded-full",
+        "bg-muted inline-flex size-9 shrink-0 items-center justify-center rounded-full",
         className,
       )}
-      style={{ backgroundColor: `${color}22`, color }}
+      // Category color blended with the text color: recognizable, but calm in both themes.
+      style={{ color: `color-mix(in oklch, ${color} 65%, var(--foreground))` }}
     >
       <Icon className="size-4" aria-hidden />
     </span>

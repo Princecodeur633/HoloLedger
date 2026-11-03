@@ -252,7 +252,7 @@ export default function RecurringPage() {
       />
 
       {pending && pending.pending.length > 0 && (
-        <Card className="border-amber-300 dark:border-amber-800">
+        <Card className="border-warning/40">
           <CardHeader>
             <CardTitle>À confirmer ({pending.pending.length})</CardTitle>
           </CardHeader>

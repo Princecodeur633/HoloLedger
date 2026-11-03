@@ -12,7 +12,7 @@ import { readJSON, writeJSON } from "@/lib/storage";
 import type { User } from "@/lib/types";
 import { useWhatsAppEnabled } from "@/lib/whatsapp";
 
-const WHATSAPP_BUTTON = "bg-[#25D366] text-white hover:bg-[#1ebe5b]";
+const WHATSAPP_BUTTON = "";
 const REMINDER_KEY = "holoLedger.whatsappReminderDismissed";
 
 /** Profile section: verified badge, or the two steps to verify the number. */
@@ -108,8 +108,8 @@ export function WhatsAppReminder() {
   if (!enabled || !user?.phone || user.whatsapp_verified || dismissed) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 p-3 text-sm">
-      <MessageCircle className="size-5 shrink-0 text-[#1ebe5b]" />
+    <div className="bg-card flex items-center gap-3 rounded-xl border p-3 text-sm">
+      <MessageCircle className="text-muted-foreground size-5 shrink-0" />
       <Link href="/profile" className="flex-1">
         <span className="font-medium">Vérifiez votre numéro WhatsApp</span>
         <span className="text-muted-foreground block text-xs">

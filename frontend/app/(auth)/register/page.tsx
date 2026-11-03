@@ -25,6 +25,7 @@ export default function RegisterPage() {
         })
       }
       footer={{ text: "Déjà inscrit ?", href: "/login", link: "Se connecter" }}
+      next="/welcome"
     />
   );
 }

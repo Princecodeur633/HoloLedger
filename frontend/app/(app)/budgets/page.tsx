@@ -179,7 +179,7 @@ export default function BudgetsPage() {
                     <p
                       className={cn(
                         "text-xs font-medium",
-                        usage.status === "over" ? "text-expense" : "text-amber-600",
+                        usage.status === "over" ? "text-expense" : "text-warning",
                       )}
                     >
                       {STATUS_LABEL[usage.status]}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SpaceIcon } from "@/components/SpaceIcon";
 import { formatMoney } from "@/lib/format";
 import { MASK, useHidden } from "@/lib/privacy";
 import { SPACE_KINDS, useSpace } from "@/lib/space";
@@ -27,7 +28,7 @@ export function SpaceSwitcher({ className }: { className?: string }) {
         )}
         aria-label="Changer d’espace"
       >
-        <span aria-hidden>{current?.icon ?? "👤"}</span>
+        <SpaceIcon icon={current?.icon} kind={current?.kind} className="size-6" />
         <span className="truncate font-medium">{current?.name ?? "Personnel"}</span>
         <ChevronDown className="text-muted-foreground size-4 shrink-0" />
         {invitations.length > 0 && (
@@ -57,9 +58,7 @@ export function SpaceSwitcher({ className }: { className?: string }) {
                     current?.id === space.id && "bg-muted",
                   )}
                 >
-                  <span className="bg-background flex size-10 shrink-0 items-center justify-center rounded-full border text-lg">
-                    {space.icon}
-                  </span>
+                  <SpaceIcon icon={space.icon} kind={space.kind} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{space.name}</span>
                     <span className="text-muted-foreground block truncate text-xs">

@@ -22,7 +22,7 @@ export function subscribeSpace(listener: () => void) {
 }
 
 /** API paths that are about the person, not about one space. */
-const PERSON_LEVEL = ["/auth/", "/spaces/", "/invitations/", "/reminders/"];
+const PERSON_LEVEL = ["/auth/", "/spaces/", "/invitations/", "/reminders/", "/notifications/"];
 
 export function isSpaceScoped(path: string) {
   return !PERSON_LEVEL.some((prefix) => path.startsWith(prefix));

@@ -20,7 +20,7 @@ import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
 const LABEL = {
-  pending: { text: "À valider", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
+  pending: { text: "À valider", cls: "bg-warning/15 text-warning" },
   validated: { text: "Validé", cls: "bg-income/10 text-income" },
   refused: { text: "Refusé", cls: "bg-expense/10 text-expense" },
 };

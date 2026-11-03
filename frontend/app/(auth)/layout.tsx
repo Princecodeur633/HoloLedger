@@ -3,7 +3,7 @@
 import { Landmark } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
@@ -12,8 +12,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // Already signed in when opening these pages → go to the app. Only checked once: after
+  // signing in / up here, the form itself decides where to go (e.g. the welcome choice).
+  const checked = useRef(false);
   useEffect(() => {
-    if (!loading && user) router.replace("/dashboard");
+    if (loading || checked.current) return;
+    checked.current = true;
+    if (user) router.replace("/dashboard");
   }, [loading, user, router]);
 
   return (

@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from users.whatsapp import digits
 
@@ -221,3 +222,71 @@ class InvitationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         self._respond(invitation, Invitation.Status.CANCELLED)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+
+class NotificationsView(APIView):
+    """GET /api/notifications/ — what needs the person's attention, across all their spaces."""
+
+    def get(self, request):
+        from budgets.models import Budget
+        from budgets.usage import OVER, budget_usage
+        from groups.models import Contribution
+        from groups.schedule import build_board
+        from recurring.services import pending_occurrences
+
+        user, today = request.user, timezone.localdate()
+        items = []
+
+        def add(space, text, href, tone="info"):
+            items.append(
+                {
+                    "space": (
+                        {"id": str(space.id), "name": space.name, "icon": space.icon, "kind": space.kind}
+                        if space
+                        else None
+                    ),
+                    "text": text,
+                    "href": href,
+                    "tone": tone,
+                }
+            )
+
+        if user.phone:
+            received = (
+                Invitation.objects.filter(phone=user.phone, status=Invitation.Status.PENDING)
+                .exclude(space__memberships__user=user)
+                .count()
+            )
+            if received:
+                add(None, f"{received} invitation{'s' if received > 1 else ''} à rejoindre un espace", "/spaces")
+
+        for membership in Membership.objects.filter(user=user).select_related("space"):
+            space = membership.space
+            if space.is_group:
+                if membership.is_manager:
+                    pending = space.contributions.filter(status=Contribution.Status.PENDING).count()
+                    if pending:
+                        add(space, f"{pending} versement{'s' if pending > 1 else ''} à valider", "/group/payments", "warning")
+                board = build_board(space, today)
+                row = next((r for r in board["members"] if r["user"] == str(user.id)), None)
+                period = board["current_period"]
+                if row and row["late_count"]:
+                    add(space, "Votre cotisation est en retard", "/group/pay", "danger")
+                elif row and period:
+                    index = next(
+                        (i for i, p in enumerate(board["periods"]) if p["index"] == period["index"]),
+                        None,
+                    )
+                    if index is not None and row["statuses"][index] == "due":
+                        add(space, f"Cotisation à payer avant le {period['deadline']:%d/%m}", "/group/pay", "warning")
+                continue
+
+            recurring = pending_occurrences(space).count()
+            if recurring:
+                add(space, f"{recurring} opération{'s' if recurring > 1 else ''} récurrente{'s' if recurring > 1 else ''} à confirmer", "/recurring", "warning")
+            budgets = Budget.objects.filter(space=space).select_related("category")
+            over = [b for b in budgets if budget_usage([b], today)[b.id]["status"] == OVER]
+            if over:
+                add(space, f"Budget dépassé : {', '.join(b.category.name for b in over[:2])}", "/budgets", "danger")
+
+        return Response({"count": len(items), "items": items})

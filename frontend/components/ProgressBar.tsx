@@ -22,7 +22,7 @@ export function ProgressBar({
         className={cn(
           "h-full rounded-full transition-[width]",
           !color && tone === "ok" && "bg-income",
-          tone === "warning" && "bg-amber-500",
+          tone === "warning" && "bg-warning",
           tone === "over" && "bg-expense",
         )}
         style={{

@@ -1,18 +1,18 @@
 "use client";
 
-import { ChevronRight, Hourglass, TriangleAlert, Utensils } from "lucide-react";
+import { ChevronRight, Hourglass, Share2, TriangleAlert, Utensils } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
 import { ProgressBar } from "@/components/ProgressBar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/format";
-import type { GroupBoard, GroupExpense } from "@/lib/group";
+import { type GroupBoard, type GroupExpense, shareText } from "@/lib/group";
 import { MASK, useHidden } from "@/lib/privacy";
 import { useCurrency, useSpace } from "@/lib/space";
 import { useApi } from "@/lib/use-api";
@@ -92,9 +92,9 @@ export function GroupHome() {
       {manager && board.pending_count > 0 && (
         <Link
           href="/group/payments"
-          className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/40"
+          className="border-warning/40 bg-warning/10 flex items-center gap-3 rounded-xl border p-3 text-sm"
         >
-          <Hourglass className="size-4 shrink-0 text-amber-600" />
+          <Hourglass className="text-warning size-4 shrink-0" />
           <span className="flex-1">
             {board.pending_count} versement{board.pending_count > 1 ? "s" : ""} à valider
           </span>
@@ -157,6 +157,17 @@ export function GroupHome() {
             )}
         </section>
       )}
+
+      <a
+        href={`https://wa.me/?text=${encodeURIComponent(
+          shareText(board, current?.name ?? "", (v) => formatMoney(v, currency), formatDate),
+        )}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonVariants({ variant: "outline", className: "h-11" })}
+      >
+        <Share2 /> Partager le point sur WhatsApp
+      </a>
 
       {myPayout && (
         <div className="bg-income/5 border-income/30 flex flex-col gap-2 rounded-xl border p-3 text-sm">

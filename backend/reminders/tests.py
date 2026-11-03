@@ -59,3 +59,25 @@ class ReminderTests(APITestCase):
             account=self.user.accounts.first(),
         )
         self.assertEqual(call().data["sent"], 0)
+
+    @mock.patch("reminders.push.send", return_value=True)
+    def test_group_dues_and_validations_in_one_notification(self, send):
+        from spaces.services import create_space
+
+        self.client.post("/api/reminders/push/subscribe/", SUBSCRIPTION, format="json")
+        # Awa is late in her tontine and has a payment to validate there.
+        space = create_space(self.user, "tontine", "Tontine du quartier")
+        rules = space.group_rules
+        rules.contribution_amount = 10000
+        rules.start_date = timezone.localdate() - timezone.timedelta(days=10)
+        rules.save()
+        carnet = space.group_members.create(name="Jean")
+        space.contributions.create(member=carnet, amount=10000, declared_by=self.user)
+
+        self.client.force_authenticate(None)
+        self.client.get("/api/reminders/cron/daily/", HTTP_AUTHORIZATION="Bearer cron")
+        body = send.call_args.args[1]["body"]
+        self.assertIn("« Tontine du quartier » est en retard", body)
+        self.assertIn("1 versement à valider", body)
+        self.assertIn("As-tu noté", body)
+

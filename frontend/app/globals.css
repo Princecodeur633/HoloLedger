@@ -8,6 +8,7 @@
   --color-background: var(--background);
   --color-income: var(--income);
   --color-expense: var(--expense);
+  --color-warning: var(--warning);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -51,7 +52,7 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -59,15 +60,15 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.955 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: oklch(0.955 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.955 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --destructive: oklch(0.57 0.18 27);
+  --border: oklch(0.915 0 0);
+  --input: oklch(0.9 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.65 0.15 160);
   --chart-2: oklch(0.62 0.17 250);
@@ -75,8 +76,9 @@
   --chart-4: oklch(0.63 0.2 300);
   --chart-5: oklch(0.65 0.19 20);
   --radius: 0.625rem;
-  --income: oklch(0.6 0.15 155);
-  --expense: oklch(0.62 0.2 25);
+  --income: oklch(0.56 0.13 158);
+  --expense: oklch(0.57 0.18 27);
+  --warning: oklch(0.6 0.12 70);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -88,32 +90,33 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.13 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.185 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.2 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.245 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
+  --muted: oklch(0.245 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.245 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --destructive: oklch(0.7 0.16 25);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.72 0.15 160);
   --chart-2: oklch(0.7 0.15 250);
   --chart-3: oklch(0.8 0.14 75);
   --chart-4: oklch(0.72 0.17 300);
   --chart-5: oklch(0.72 0.17 20);
-  --income: oklch(0.72 0.16 155);
-  --expense: oklch(0.7 0.18 25);
-  --sidebar: oklch(0.205 0 0);
+  --income: oklch(0.74 0.13 158);
+  --expense: oklch(0.7 0.16 25);
+  --warning: oklch(0.8 0.12 80);
+  --sidebar: oklch(0.16 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.922 0 0);
   --sidebar-primary-foreground: oklch(0.205 0 0);
@@ -129,6 +132,33 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Theme switch fades instead of flashing. */
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+  /* Gentle feedback on every tap: colors ease, and the pressed element sinks slightly. */
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+    transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+    transition-duration: 150ms;
+  }
+  button:not(:disabled):active,
+  a:active {
+    transform: scale(0.98);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
+    }
+    button:active,
+    a:active {
+      transform: none;
+    }
   }
   html {
     @apply font-sans;

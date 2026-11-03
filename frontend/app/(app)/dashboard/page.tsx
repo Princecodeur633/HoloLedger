@@ -102,11 +102,8 @@ function PersonalDashboard() {
       */}
       <div className="flex flex-col [&>*:nth-child(n+2)]:hidden">
         {summary.pending_recurring_count > 0 && (
-          <Link
-            href="/recurring"
-            className={`${NOTICE} border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40`}
-          >
-            <Repeat className="size-4 shrink-0 text-amber-600" />
+          <Link href="/recurring" className={`${NOTICE} border-warning/40 bg-warning/10`}>
+            <Repeat className="text-warning size-4 shrink-0" />
             <span className="flex-1">
               {summary.pending_recurring_count} opération
               {summary.pending_recurring_count > 1 ? "s récurrentes" : " récurrente"} à confirmer
