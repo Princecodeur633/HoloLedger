@@ -4,8 +4,6 @@ import {
   BookOpen,
   ChartPie,
   Ellipsis,
-  FileUp,
-  Goal,
   HandCoins,
   Receipt,
   Settings2,
@@ -16,7 +14,6 @@ import {
   LayoutDashboard,
   PiggyBank,
   Plus,
-  Repeat,
   Settings,
 } from "lucide-react";
 import Link from "next/link";
@@ -74,32 +71,17 @@ export const MORE_NAV: {
   },
   {
     href: "/budgets",
-    label: "Budgets",
+    label: "Budgets et objectifs",
     icon: PiggyBank,
-    description: "Limites par période",
+    description: "Limites de dépenses, épargne",
     section: "Mon argent",
   },
-  { href: "/goals", label: "Objectifs", icon: Goal, description: "Épargne", section: "Mon argent" },
   {
     href: "/debts",
     label: "Dettes et prêts",
     icon: HandCoins,
     description: "Qui me doit, à qui je dois",
     section: "Mon argent",
-  },
-  {
-    href: "/recurring",
-    label: "Récurrentes",
-    icon: Repeat,
-    description: "Loyer, salaire, abonnements",
-    section: "Mon argent",
-  },
-  {
-    href: "/import",
-    label: "Importer",
-    icon: FileUp,
-    description: "Relevé bancaire, SMS",
-    section: "Outils",
   },
   {
     href: "/spaces",
@@ -159,6 +141,9 @@ export function moreNav(kind: SpaceKind | undefined): typeof MORE_NAV {
 const sectionOf = (item: object | undefined) =>
   item && "section" in item ? (item.section as Section) : undefined;
 
+/** Pages laid out in two columns on large screens (the others stay at reading width). */
+const WIDE = ["/dashboard", "/transactions", "/group/payments"];
+
 const MORE_TAB = { href: "/more", label: "Plus", icon: Ellipsis };
 
 /** Screens about accounts and operations, absent from tontine / family spaces. */
@@ -179,7 +164,8 @@ function isActive(pathname: string, href: string, kind: SpaceKind | undefined) {
     return (
       moreNav(kind).some((item) => pathname.startsWith(item.href)) ||
       pathname === href ||
-      pathname === "/profile"
+      // Pages reached from inside others (goals via budgets, recurring via history…).
+      ["/profile", "/goals", "/recurring"].some((p) => pathname.startsWith(p))
     );
   return pathname.startsWith(href);
 }
@@ -280,7 +266,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Switching space remounts the pages, so every screen reloads its data. */}
         <main
           key={current?.id ?? "personal"}
-          className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-28 md:px-8 md:pt-8 md:pb-10 print:p-0"
+          className={cn(
+            "mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-28 md:px-8 md:pt-8 md:pb-10 print:p-0",
+            WIDE.includes(pathname) && "lg:max-w-6xl",
+          )}
         >
           {children}
         </main>

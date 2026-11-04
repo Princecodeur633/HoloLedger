@@ -94,147 +94,162 @@ function PersonalDashboard() {
     <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-col gap-5 duration-300">
       <PageHeader title={`Bonjour ${user?.username ?? ""}`} />
 
-      <BalanceCard balance={summary.balance} currency={currency} trend={summary.balance_trend} />
+      {/* Large screens: the figures on the left, what is coming and what happened on the right. */}
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-5">
+          <BalanceCard
+            balance={summary.balance}
+            currency={currency}
+            trend={summary.balance_trend}
+          />
 
-      {/*
+          {/*
         One message at a time, by priority: only the first one that renders is shown
         (the components below render nothing when they have nothing to say).
       */}
-      <div className="flex flex-col [&>*:nth-child(n+2)]:hidden">
-        {summary.pending_recurring_count > 0 && (
-          <Link href="/recurring" className={`${NOTICE} border-warning/40 bg-warning/10`}>
-            <Repeat className="text-warning size-4 shrink-0" />
-            <span className="flex-1">
-              {summary.pending_recurring_count} opération
-              {summary.pending_recurring_count > 1 ? "s récurrentes" : " récurrente"} à confirmer
-            </span>
-            <ChevronRight className="size-4" />
-          </Link>
-        )}
-        {alert && (
-          <Link href="/budgets" className={`${NOTICE} border-expense/30 bg-expense/5`}>
-            <TriangleAlert className="text-expense size-4 shrink-0" />
-            <span className="flex-1">
-              Budget <span className="font-medium">{alert.category.name}</span> utilisé à{" "}
-              {Math.round(alert.percent)} %
-              {summary.budget_alerts.length > 1 && ` (+${summary.budget_alerts.length - 1} autre)`}
-            </span>
-            <ChevronRight className="size-4" />
-          </Link>
-        )}
-        <MonthlyRecap summary={summary} />
-        {summary.space.kind === "personal" && <GettingStarted summary={summary} />}
-        <WhatsAppReminder />
-        <InstallPrompt />
-      </div>
-
-      {summary.accounts.length > 1 && (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
-          {summary.accounts.map((a) => (
-            <Link
-              key={a.id}
-              href="/accounts"
-              className="bg-card flex min-w-36 shrink-0 items-center gap-2 rounded-xl border p-2.5"
-            >
-              <CategoryIcon icon={accountTypeIcon(a.type)} color={a.color} className="size-8" />
-              <span className="min-w-0">
-                <span className="text-muted-foreground block truncate text-xs">{a.name}</span>
-                <span className="block text-sm font-semibold tabular-nums">{money(a.balance)}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <section>
-        <h2 className="text-muted-foreground mb-2 text-sm font-medium">
-          {periodLabel(today(), "month")}
-        </h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <StatCard
-            label={words.income}
-            value={month.income}
-            currency={currency}
-            variant="income"
-          />
-          <StatCard
-            label={words.expense}
-            value={month.expense}
-            currency={currency}
-            variant="expense"
-          />
-          <div className="col-span-2 sm:col-span-1">
-            <StatCard label={words.net} value={month.net} currency={currency} variant="net" />
+          <div className="flex flex-col [&>*:nth-child(n+2)]:hidden">
+            {summary.pending_recurring_count > 0 && (
+              <Link href="/recurring" className={`${NOTICE} border-warning/40 bg-warning/10`}>
+                <Repeat className="text-warning size-4 shrink-0" />
+                <span className="flex-1">
+                  {summary.pending_recurring_count} opération
+                  {summary.pending_recurring_count > 1 ? "s récurrentes" : " récurrente"} à
+                  confirmer
+                </span>
+                <ChevronRight className="size-4" />
+              </Link>
+            )}
+            {alert && (
+              <Link href="/budgets" className={`${NOTICE} border-expense/30 bg-expense/5`}>
+                <TriangleAlert className="text-expense size-4 shrink-0" />
+                <span className="flex-1">
+                  Budget <span className="font-medium">{alert.category.name}</span> utilisé à{" "}
+                  {Math.round(alert.percent)} %
+                  {summary.budget_alerts.length > 1 &&
+                    ` (+${summary.budget_alerts.length - 1} autre)`}
+                </span>
+                <ChevronRight className="size-4" />
+              </Link>
+            )}
+            <MonthlyRecap summary={summary} />
+            {summary.space.kind === "personal" && <GettingStarted summary={summary} />}
+            <WhatsAppReminder />
+            <InstallPrompt />
           </div>
+
+          {summary.accounts.length > 1 && (
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+              {summary.accounts.map((a) => (
+                <Link
+                  key={a.id}
+                  href="/accounts"
+                  className="bg-card flex min-w-36 shrink-0 items-center gap-2 rounded-xl border p-2.5"
+                >
+                  <CategoryIcon icon={accountTypeIcon(a.type)} color={a.color} className="size-8" />
+                  <span className="min-w-0">
+                    <span className="text-muted-foreground block truncate text-xs">{a.name}</span>
+                    <span className="block text-sm font-semibold tabular-nums">
+                      {money(a.balance)}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <section>
+            <h2 className="text-muted-foreground mb-2 text-sm font-medium">
+              {periodLabel(today(), "month")}
+            </h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <StatCard
+                label={words.income}
+                value={month.income}
+                currency={currency}
+                variant="income"
+              />
+              <StatCard
+                label={words.expense}
+                value={month.expense}
+                currency={currency}
+                variant="expense"
+              />
+              <div className="col-span-2 sm:col-span-1">
+                <StatCard label={words.net} value={month.net} currency={currency} variant="net" />
+              </div>
+            </div>
+          </section>
+
+          {(Number(debts.owed_to_me) > 0 || Number(debts.i_owe) > 0) && (
+            <Link
+              href="/debts"
+              className="bg-card hover:bg-muted flex items-center gap-3 rounded-xl border p-3 text-sm transition-colors"
+            >
+              <HandCoins className="text-muted-foreground size-5 shrink-0" />
+              <span className="flex flex-1 flex-wrap gap-x-4 gap-y-1">
+                {Number(debts.owed_to_me) > 0 && (
+                  <span>
+                    {words.owedToMe}{" "}
+                    <span className="text-income font-semibold tabular-nums">
+                      {money(debts.owed_to_me)}
+                    </span>
+                  </span>
+                )}
+                {Number(debts.i_owe) > 0 && (
+                  <span>
+                    {words.iOwe}{" "}
+                    <span className="text-expense font-semibold tabular-nums">
+                      {money(debts.i_owe)}
+                    </span>
+                  </span>
+                )}
+              </span>
+              <ChevronRight className="text-muted-foreground size-4" />
+            </Link>
+          )}
+
+          {summary.members.length > 1 && (
+            <section>
+              <h2 className="text-muted-foreground mb-2 text-sm font-medium">
+                Qui a contribué ce mois-ci
+              </h2>
+              <ul className="bg-card divide-y rounded-xl border">
+                {summary.members.map((m) => (
+                  <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+                    <UserAvatar name={m.username} className="size-8 text-xs" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{m.username}</span>
+                    <span className="text-income tabular-nums">+{money(m.income)}</span>
+                    <span className="text-expense tabular-nums">−{money(m.expense)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
-      </section>
+        <div className="flex flex-col gap-5">
+          <Upcoming currency={currency} />
 
-      {(Number(debts.owed_to_me) > 0 || Number(debts.i_owe) > 0) && (
-        <Link
-          href="/debts"
-          className="bg-card hover:bg-muted flex items-center gap-3 rounded-xl border p-3 text-sm transition-colors"
-        >
-          <HandCoins className="text-muted-foreground size-5 shrink-0" />
-          <span className="flex flex-1 flex-wrap gap-x-4 gap-y-1">
-            {Number(debts.owed_to_me) > 0 && (
-              <span>
-                {words.owedToMe}{" "}
-                <span className="text-income font-semibold tabular-nums">
-                  {money(debts.owed_to_me)}
-                </span>
-              </span>
-            )}
-            {Number(debts.i_owe) > 0 && (
-              <span>
-                {words.iOwe}{" "}
-                <span className="text-expense font-semibold tabular-nums">
-                  {money(debts.i_owe)}
-                </span>
-              </span>
-            )}
-          </span>
-          <ChevronRight className="text-muted-foreground size-4" />
-        </Link>
-      )}
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>Dernières opérations</CardTitle>
+              <Link href="/transactions" className="text-primary text-sm font-medium">
+                Tout voir
+              </Link>
+            </CardHeader>
+            <CardContent className="px-2">
+              <TransactionList transactions={summary.recent_transactions} grouped={false} />
+            </CardContent>
+          </Card>
 
-      {summary.members.length > 1 && (
-        <section>
-          <h2 className="text-muted-foreground mb-2 text-sm font-medium">
-            Qui a contribué ce mois-ci
-          </h2>
-          <ul className="bg-card divide-y rounded-xl border">
-            {summary.members.map((m) => (
-              <li key={m.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-                <UserAvatar name={m.username} className="size-8 text-xs" />
-                <span className="min-w-0 flex-1 truncate font-medium">{m.username}</span>
-                <span className="text-income tabular-nums">+{money(m.income)}</span>
-                <span className="text-expense tabular-nums">−{money(m.expense)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <Upcoming currency={currency} />
-
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Dernières opérations</CardTitle>
-          <Link href="/transactions" className="text-primary text-sm font-medium">
-            Tout voir
+          <Link
+            href="/reports"
+            className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-sm"
+          >
+            Graphiques et répartition par catégorie dans Rapports{" "}
+            <ChevronRight className="size-4" />
           </Link>
-        </CardHeader>
-        <CardContent className="px-2">
-          <TransactionList transactions={summary.recent_transactions} grouped={false} />
-        </CardContent>
-      </Card>
-
-      <Link
-        href="/reports"
-        className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 text-sm"
-      >
-        Graphiques et répartition par catégorie dans Rapports <ChevronRight className="size-4" />
-      </Link>
+        </div>
+      </div>
     </div>
   );
 }

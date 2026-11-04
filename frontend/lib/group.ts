@@ -151,3 +151,15 @@ export function shareText(
   lines.push("", "Suivi sur HoloLedger");
   return lines.join("\n");
 }
+
+/** The rules in one plain sentence: "10 000 FCFA chaque mois · à payer sous 3 jours · …". */
+export function rulesSummary(rules: GroupRules, money: (v: string | number) => string) {
+  const parts = [
+    `${money(rules.contribution_amount)} ${FREQUENCIES.find((f) => f.value === rules.frequency)?.label.toLowerCase() ?? ""}`,
+    `à payer sous ${rules.payment_delay_days} jour${rules.payment_delay_days > 1 ? "s" : ""}`,
+  ];
+  if (Number(rules.late_penalty) > 0) parts.push(`pénalité de retard ${money(rules.late_penalty)}`);
+  if (rules.goal_amount && Number(rules.goal_amount) > 0)
+    parts.push(`${rules.goal_name || "objectif"} : ${money(rules.goal_amount)}`);
+  return parts.join(" · ");
+}

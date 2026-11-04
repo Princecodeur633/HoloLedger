@@ -61,7 +61,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 **Pourquoi :** gagner du temps et éviter les erreurs de montant.
 **Comment :**
 1. Copiez le SMS de votre opérateur (MTN, Airtel…).
-2. Dans **+**, touchez **Remplir depuis un SMS Mobile Money**.
+2. Touchez **+**, puis l'onglet **SMS**.
 3. Collez, vérifiez, puis **Enregistrer**.
 
 ## ✏️ Corriger ou supprimer une opération
@@ -94,7 +94,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 > Loyer, transport, abonnement : notez-les une seule fois.
 **Pourquoi :** l'app vous les propose automatiquement à chaque échéance.
 **Comment :**
-1. **Plus → Récurrentes → Ajouter**.
+1. **Historique → Récurrentes → Ajouter**.
 2. Réglez **Répéter tous les** (1 jour, 1 semaine, 1 mois…) et **Se termine** (jamais, à une date, après N fois).
 3. À l'échéance, **Confirmer** (montant modifiable) ou **Pas fait** si vous ne l'avez pas dépensé.
 💡 Le bouton ⏭ annule une échéance à l'avance.
@@ -104,7 +104,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 > Une limite par catégorie : par mois, trimestre, semestre ou année.
 **Pourquoi :** être prévenu avant de trop dépenser.
 **Comment :**
-1. **Plus → Budgets → + Budget**.
+1. **Plus → Budgets et objectifs → + Budget**.
 2. Choisissez une catégorie, la **période** et un montant maximum.
 3. La barre passe à l'orange puis au rouge quand vous approchez de la limite.
 [Mes budgets](/budgets)
@@ -113,7 +113,7 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 > Mettre de côté pour un projet.
 **Pourquoi :** voir où vous en êtes et combien mettre de côté chaque mois.
 **Comment :**
-1. **Plus → Objectifs → + Objectif** (nom, montant, date facultative).
+1. **Plus → Budgets et objectifs → onglet Objectifs → + Objectif**.
 2. Touchez **Verser** à chaque fois que vous mettez de l'argent de côté.
 [Mes objectifs](/goals)
 
@@ -204,9 +204,9 @@ Des fiches courtes pour tout comprendre en quelques secondes. Touchez une fiche 
 > Ajouter beaucoup d'opérations d'un coup.
 **Pourquoi :** reprendre votre historique bancaire sans tout retaper.
 **Comment :**
-1. **Plus → Importer**.
+1. Touchez **+**, puis l'onglet **Relevé**.
 2. Choisissez le fichier du relevé (CSV ou Excel), vérifiez l'aperçu, puis validez.
-[Importer](/import)
+[Importer un relevé](/transactions/new?tab=releve)
 
 ## 📱 Installer l'app sur le téléphone
 > Une icône sur l'écran d'accueil, comme une vraie application.

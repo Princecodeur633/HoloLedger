@@ -35,7 +35,8 @@ export default function GroupPaymentsPage() {
   const manager = board?.me.is_manager ?? false;
   const { user } = useAuth();
 
-  const shown = (items ?? []).filter((c) => tab === "all" || c.status === "pending");
+  const visible = (which: "pending" | "all") =>
+    (items ?? []).filter((c) => which === "all" || c.status === "pending");
 
   async function act(c: Contribution, action: "validate" | "refuse" | "delete") {
     let body: { reason: string } | undefined;
@@ -79,7 +80,7 @@ export default function GroupPaymentsPage() {
         }
       />
 
-      <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
+      <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1 lg:hidden">
         {(
           [
             [
@@ -103,73 +104,220 @@ export default function GroupPaymentsPage() {
         ))}
       </div>
 
-      {items === null ? (
-        <ListSkeleton />
-      ) : shown.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          message={
-            tab === "pending"
-              ? "Aucun versement en attente de validation."
-              : "Aucun versement pour l’instant."
-          }
-        />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {shown.map((c) => (
-            <li key={c.id} className="bg-card rounded-xl border p-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{c.member_name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {formatDate(c.date)}
-                    {c.reference && ` · réf. ${c.reference}`}
-                    {c.declared_by_name && ` · déclaré par ${c.declared_by_name}`}
-                  </p>
-                  {c.note && <p className="text-muted-foreground mt-1 text-xs">{c.note}</p>}
-                  {c.status === "refused" && c.refusal_reason && (
-                    <p className="text-expense mt-1 text-xs">Motif : {c.refusal_reason}</p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="font-semibold tabular-nums">{money(c.amount)}</span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-xs font-medium",
-                      LABEL[c.status].cls,
-                    )}
-                  >
-                    {LABEL[c.status].text}
-                  </span>
-                </div>
-              </div>
-              {(manager || (c.status === "pending" && c.declared_by_name === user?.username)) && (
-                <div className="mt-2 flex gap-2">
-                  {manager && c.status === "pending" && (
-                    <>
-                      <Button size="sm" onClick={() => act(c, "validate")}>
-                        <Check /> Valider
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="lg:hidden">
+          {items === null ? (
+            <ListSkeleton />
+          ) : visible(tab).length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              message={
+                tab === "pending"
+                  ? "Aucun versement en attente de validation."
+                  : "Aucun versement pour l’instant."
+              }
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {visible(tab).map((c) => (
+                <li key={c.id} className="bg-card rounded-xl border p-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{c.member_name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatDate(c.date)}
+                        {c.reference && ` · réf. ${c.reference}`}
+                        {c.declared_by_name && ` · déclaré par ${c.declared_by_name}`}
+                      </p>
+                      {c.note && <p className="text-muted-foreground mt-1 text-xs">{c.note}</p>}
+                      {c.status === "refused" && c.refusal_reason && (
+                        <p className="text-expense mt-1 text-xs">Motif : {c.refusal_reason}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-semibold tabular-nums">{money(c.amount)}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          LABEL[c.status].cls,
+                        )}
+                      >
+                        {LABEL[c.status].text}
+                      </span>
+                    </div>
+                  </div>
+                  {(manager ||
+                    (c.status === "pending" && c.declared_by_name === user?.username)) && (
+                    <div className="mt-2 flex gap-2">
+                      {manager && c.status === "pending" && (
+                        <>
+                          <Button size="sm" onClick={() => act(c, "validate")}>
+                            <Check /> Valider
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => act(c, "refuse")}>
+                            <X /> Refuser
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="ml-auto"
+                        aria-label="Supprimer"
+                        onClick={() => act(c, "delete")}
+                      >
+                        <Trash2 />
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => act(c, "refuse")}>
-                        <X /> Refuser
-                      </Button>
-                    </>
+                    </div>
                   )}
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="ml-auto"
-                    aria-label="Supprimer"
-                    onClick={() => act(c, "delete")}
-                  >
-                    <Trash2 />
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <section className="hidden lg:flex lg:flex-col lg:gap-2">
+          <h2 className="text-sm font-semibold">À valider</h2>
+          {items === null ? (
+            <ListSkeleton />
+          ) : visible("pending").length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              message={
+                true
+                  ? "Aucun versement en attente de validation."
+                  : "Aucun versement pour l’instant."
+              }
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {visible("pending").map((c) => (
+                <li key={c.id} className="bg-card rounded-xl border p-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{c.member_name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatDate(c.date)}
+                        {c.reference && ` · réf. ${c.reference}`}
+                        {c.declared_by_name && ` · déclaré par ${c.declared_by_name}`}
+                      </p>
+                      {c.note && <p className="text-muted-foreground mt-1 text-xs">{c.note}</p>}
+                      {c.status === "refused" && c.refusal_reason && (
+                        <p className="text-expense mt-1 text-xs">Motif : {c.refusal_reason}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-semibold tabular-nums">{money(c.amount)}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          LABEL[c.status].cls,
+                        )}
+                      >
+                        {LABEL[c.status].text}
+                      </span>
+                    </div>
+                  </div>
+                  {(manager ||
+                    (c.status === "pending" && c.declared_by_name === user?.username)) && (
+                    <div className="mt-2 flex gap-2">
+                      {manager && c.status === "pending" && (
+                        <>
+                          <Button size="sm" onClick={() => act(c, "validate")}>
+                            <Check /> Valider
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => act(c, "refuse")}>
+                            <X /> Refuser
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="ml-auto"
+                        aria-label="Supprimer"
+                        onClick={() => act(c, "delete")}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="hidden lg:flex lg:flex-col lg:gap-2">
+          <h2 className="text-sm font-semibold">Tous les versements</h2>
+          {items === null ? (
+            <ListSkeleton />
+          ) : visible("all").length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              message={
+                false
+                  ? "Aucun versement en attente de validation."
+                  : "Aucun versement pour l’instant."
+              }
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {visible("all").map((c) => (
+                <li key={c.id} className="bg-card rounded-xl border p-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{c.member_name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatDate(c.date)}
+                        {c.reference && ` · réf. ${c.reference}`}
+                        {c.declared_by_name && ` · déclaré par ${c.declared_by_name}`}
+                      </p>
+                      {c.note && <p className="text-muted-foreground mt-1 text-xs">{c.note}</p>}
+                      {c.status === "refused" && c.refusal_reason && (
+                        <p className="text-expense mt-1 text-xs">Motif : {c.refusal_reason}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="font-semibold tabular-nums">{money(c.amount)}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
+                          LABEL[c.status].cls,
+                        )}
+                      >
+                        {LABEL[c.status].text}
+                      </span>
+                    </div>
+                  </div>
+                  {(manager ||
+                    (c.status === "pending" && c.declared_by_name === user?.username)) && (
+                    <div className="mt-2 flex gap-2">
+                      {manager && c.status === "pending" && (
+                        <>
+                          <Button size="sm" onClick={() => act(c, "validate")}>
+                            <Check /> Valider
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => act(c, "refuse")}>
+                            <X /> Refuser
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="ml-auto"
+                        aria-label="Supprimer"
+                        onClick={() => act(c, "delete")}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

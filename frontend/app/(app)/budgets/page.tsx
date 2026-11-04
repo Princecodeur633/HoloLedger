@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
+import { PlansTabs } from "@/components/PlansTabs";
 import { CategoryIcon } from "@/components/CategoryBadge";
 import { Field, MoneyInput, NativeSelect } from "@/components/form";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -112,6 +113,7 @@ export default function BudgetsPage() {
           </Button>
         }
       />
+      <PlansTabs />
 
       <div className="flex items-center justify-between gap-2">
         <Button

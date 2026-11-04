@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { api, ApiError, OFFLINE_MESSAGE } from "@/lib/api";
-import { parseAmount } from "@/lib/format";
-import { FREQUENCIES, type GroupBoard, type GroupRules } from "@/lib/group";
+import { formatDate } from "@/lib/dates";
+import { formatMoney, parseAmount } from "@/lib/format";
+import { FREQUENCIES, type GroupBoard, type GroupRules, rulesSummary } from "@/lib/group";
 import { useCurrency, useSpace } from "@/lib/space";
 import { useApi } from "@/lib/use-api";
 
@@ -153,11 +154,27 @@ function RulesForm({ rules, editable }: { rules: GroupRules; editable: boolean }
 }
 
 export default function GroupRulesPage() {
+  const currency = useCurrency();
   const { data: board } = useApi<GroupBoard>("/group/");
   return (
     <div className="mx-auto max-w-lg">
       <PageHeader title="Règles du groupe" />
-      {board ? <RulesForm rules={board.rules} editable={board.me.is_manager} /> : <ListSkeleton />}
+      {!board ? (
+        <ListSkeleton />
+      ) : board.me.is_manager ? (
+        <RulesForm rules={board.rules} editable />
+      ) : (
+        // Members read the rules as a sentence rather than a greyed-out form.
+        <div className="bg-card flex flex-col gap-2 rounded-xl border p-4">
+          <p className="font-semibold">Les règles du groupe</p>
+          <p className="text-muted-foreground text-sm">
+            {rulesSummary(board.rules, (v) => formatMoney(v, currency))}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            Depuis le {formatDate(board.rules.start_date)}. Seul un gestionnaire peut les modifier.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

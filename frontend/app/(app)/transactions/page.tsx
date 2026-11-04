@@ -1,6 +1,7 @@
 "use client";
 
-import { CloudOff, FileDown, Search } from "lucide-react";
+import { CloudOff, FileDown, Repeat, Search } from "lucide-react";
+import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,7 +9,8 @@ import { PageHeader } from "@/components/AppShell";
 import { NativeSelect } from "@/components/form";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { TransactionList } from "@/components/TransactionList";
-import { Button } from "@/components/ui/button";
+import { UpcomingRecurring } from "@/components/UpcomingRecurring";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { download } from "@/lib/api";
@@ -23,6 +25,7 @@ import type {
   Transaction,
   TransactionType,
 } from "@/lib/types";
+import { useCurrency } from "@/lib/space";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +50,7 @@ const chip = (active: boolean) =>
   );
 
 export default function TransactionsPage() {
+  const currency = useCurrency();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim());
   const [type, setType] = useState<TransactionType | "">("");
@@ -95,11 +99,18 @@ export default function TransactionsPage() {
       <PageHeader
         title="Historique"
         action={
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!data?.count}>
-            <FileDown /> Exporter CSV
-          </Button>
+          <div className="flex gap-1">
+            <Link href="/recurring" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              <Repeat /> Récurrentes
+            </Link>
+            <Button variant="ghost" size="sm" onClick={exportCsv} disabled={!data?.count}>
+              <FileDown /> CSV
+            </Button>
+          </div>
         }
       />
+
+      <UpcomingRecurring currency={currency} />
 
       {pending.length > 0 && (
         <div className="rounded-xl border border-dashed p-3 text-sm">
@@ -114,136 +125,148 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      <div className="relative">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-        <Input
-          type="search"
-          placeholder="Rechercher une opération, un montant…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            resetPage();
-          }}
-          className="h-10 pl-9"
-        />
-      </div>
+      {/* Large screens: filters stay on the left while the list scrolls on the right. */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[280px_1fr] lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-8">
+          <div className="relative">
+            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <Input
+              type="search"
+              placeholder="Rechercher une opération, un montant…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                resetPage();
+              }}
+              className="h-10 pl-9"
+            />
+          </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {TYPES.map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            onClick={() => {
-              setType(t.value);
-              setCategory("");
-              resetPage();
-            }}
-            className={chip(type === t.value)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="-mt-1 flex flex-wrap items-center gap-2">
-        {WHEN.map((w) => (
-          <button
-            key={w.value}
-            type="button"
-            onClick={() => {
-              setWhen(w.value);
-              resetPage();
-            }}
-            className={chip(when === w.value)}
-          >
-            {w.label}
-          </button>
-        ))}
-      </div>
-
-      <div className={cn("grid gap-2", (accounts?.length ?? 0) > 1 && "grid-cols-2")}>
-        <NativeSelect
-          aria-label="Catégorie"
-          className="h-9"
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            resetPage();
-          }}
-        >
-          <option value="">Toutes les catégories</option>
-          {(categories ?? [])
-            .filter((c) => !type || c.type === type || c.type === "both")
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+          <div className="flex flex-wrap items-center gap-2">
+            {TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => {
+                  setType(t.value);
+                  setCategory("");
+                  resetPage();
+                }}
+                className={chip(type === t.value)}
+              >
+                {t.label}
+              </button>
             ))}
-        </NativeSelect>
-        {(accounts?.length ?? 0) > 1 && (
-          <NativeSelect
-            aria-label="Compte"
-            className="h-9"
-            value={account}
-            onChange={(e) => {
-              setAccount(e.target.value);
-              resetPage();
-            }}
-          >
-            <option value="">Tous les comptes</option>
-            {accounts!.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
+          </div>
+
+          <div className="-mt-1 flex flex-wrap items-center gap-2">
+            {WHEN.map((w) => (
+              <button
+                key={w.value}
+                type="button"
+                onClick={() => {
+                  setWhen(w.value);
+                  resetPage();
+                }}
+                className={chip(when === w.value)}
+              >
+                {w.label}
+              </button>
             ))}
-          </NativeSelect>
-        )}
-      </div>
+          </div>
 
-      {when === "custom" && (
-        <PeriodSelector
-          period={range.period}
-          date={range.date}
-          onChange={(v) => {
-            setRange(v);
-            resetPage();
-          }}
-        />
-      )}
+          <div className={cn("grid gap-2", (accounts?.length ?? 0) > 1 && "grid-cols-2")}>
+            <NativeSelect
+              aria-label="Catégorie"
+              className="h-9"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                resetPage();
+              }}
+            >
+              <option value="">Toutes les catégories</option>
+              {(categories ?? [])
+                .filter((c) => !type || c.type === type || c.type === "both")
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </NativeSelect>
+            {(accounts?.length ?? 0) > 1 && (
+              <NativeSelect
+                aria-label="Compte"
+                className="h-9"
+                value={account}
+                onChange={(e) => {
+                  setAccount(e.target.value);
+                  resetPage();
+                }}
+              >
+                <option value="">Tous les comptes</option>
+                {accounts!.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            )}
+          </div>
 
-      {error && <p className="text-destructive text-sm">{error.message}</p>}
-
-      {data && (
-        <p className="text-muted-foreground text-sm">
-          {data.count} opération{data.count > 1 ? "s" : ""}
-          {data.results.length > 0 && (
-            <>
-              {" "}
-              · net affiché :{" "}
-              <span className={cn("font-medium", pageTotal >= 0 ? "text-income" : "text-expense")}>
-                {pageTotal > 0 ? "+" : ""}
-                {formatMoney(pageTotal, data.results[0].currency)}
-              </span>
-            </>
+          {when === "custom" && (
+            <PeriodSelector
+              period={range.period}
+              date={range.date}
+              onChange={(v) => {
+                setRange(v);
+                resetPage();
+              }}
+            />
           )}
-        </p>
-      )}
-
-      <div className={cn(loading && "opacity-60 transition-opacity")}>
-        {data ? <TransactionList transactions={data.results} /> : !error && <ListSkeleton />}
-      </div>
-
-      {data && (data.next || data.previous) && (
-        <div className="flex items-center justify-center gap-3">
-          <Button variant="outline" disabled={!data.previous} onClick={() => setPage((p) => p - 1)}>
-            Précédent
-          </Button>
-          <span className="text-muted-foreground text-sm">Page {page}</span>
-          <Button variant="outline" disabled={!data.next} onClick={() => setPage((p) => p + 1)}>
-            Suivant
-          </Button>
         </div>
-      )}
+        <div className="flex min-w-0 flex-col gap-4">
+          {error && <p className="text-destructive text-sm">{error.message}</p>}
+
+          {data && (
+            <p className="text-muted-foreground text-sm">
+              {data.count} opération{data.count > 1 ? "s" : ""}
+              {data.results.length > 0 && (
+                <>
+                  {" "}
+                  · net affiché :{" "}
+                  <span
+                    className={cn("font-medium", pageTotal >= 0 ? "text-income" : "text-expense")}
+                  >
+                    {pageTotal > 0 ? "+" : ""}
+                    {formatMoney(pageTotal, data.results[0].currency)}
+                  </span>
+                </>
+              )}
+            </p>
+          )}
+
+          <div className={cn(loading && "opacity-60 transition-opacity")}>
+            {data ? <TransactionList transactions={data.results} /> : !error && <ListSkeleton />}
+          </div>
+
+          {data && (data.next || data.previous) && (
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                disabled={!data.previous}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Précédent
+              </Button>
+              <span className="text-muted-foreground text-sm">Page {page}</span>
+              <Button variant="outline" disabled={!data.next} onClick={() => setPage((p) => p + 1)}>
+                Suivant
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

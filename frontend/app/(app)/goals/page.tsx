@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
+import { PlansTabs } from "@/components/PlansTabs";
 import { CATEGORY_COLORS, CategoryIcon } from "@/components/CategoryBadge";
 import { Field, MoneyInput } from "@/components/form";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -170,6 +171,7 @@ export default function GoalsPage() {
           </Button>
         }
       />
+      <PlansTabs />
 
       {goals === null && <ListSkeleton rows={2} />}
       {goals?.length === 0 && (

@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
@@ -17,14 +17,16 @@ import type { GroupBoard } from "@/lib/group";
 import { useCurrency } from "@/lib/space";
 import { useApi } from "@/lib/use-api";
 
-function PayForm({ board }: { board: GroupBoard }) {
+function PayForm({ board, preset }: { board: GroupBoard; preset: string | null }) {
   const router = useRouter();
   const currency = useCurrency();
   const manager = board.me.is_manager;
   const me = board.members.find((m) => m.id === board.me.member);
+  // Coming from a member's record: that member is preselected (managers only).
+  const target = (board.me.is_manager && board.members.find((m) => m.id === preset)) || me;
   const [form, setForm] = useState({
-    member: board.me.member ?? board.members[0]?.id ?? "",
-    amount: me ? String(Number(me.amount)) : "",
+    member: target?.id ?? board.members[0]?.id ?? "",
+    amount: target ? String(Number(target.amount)) : "",
     date: today(),
     reference: "",
     note: "",
@@ -162,8 +164,9 @@ function PayForm({ board }: { board: GroupBoard }) {
   );
 }
 
-export default function GroupPayPage() {
+function GroupPay() {
   const router = useRouter();
+  const preset = useSearchParams().get("member");
   const { data: board } = useApi<GroupBoard>("/group/");
   return (
     <div className="mx-auto max-w-lg">
@@ -175,7 +178,15 @@ export default function GroupPayPage() {
           </Button>
         }
       />
-      {board ? <PayForm board={board} /> : <ListSkeleton />}
+      {board ? <PayForm board={board} preset={preset} /> : <ListSkeleton />}
     </div>
+  );
+}
+
+export default function GroupPayPage() {
+  return (
+    <Suspense>
+      <GroupPay />
+    </Suspense>
   );
 }

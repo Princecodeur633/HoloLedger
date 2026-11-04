@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Pencil, Shuffle, Trash2, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Shuffle, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/AppShell";
 import { Field, MoneyInput } from "@/components/form";
+import { MemberSheet } from "@/components/group/MemberSheet";
 import { StatusDots } from "@/components/group/StatusChip";
 import { PhoneInput } from "@/components/PhoneInput";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -42,6 +43,35 @@ export default function GroupMembersPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const manager = board?.me.is_manager ?? false;
+  const [opened, setOpened] = useState<string | null>(null);
+  const openedMember = board?.members.find((m) => m.id === opened) ?? null;
+
+  function editMember(m: GroupMemberRow) {
+    setOpened(null);
+    setDraft({
+      id: m.id,
+      name: m.name,
+      phone: phoneValue(m.phone || null),
+      expected_amount: m.expected_amount ? String(Number(m.expected_amount)) : "",
+    });
+  }
+
+  function toggleManager(m: GroupMemberRow) {
+    run(
+      () =>
+        api(`/group/members/${m.id}/role/`, {
+          method: "POST",
+          body: { manager: m.role !== "manager" },
+        }),
+      m.role === "manager" ? "N’est plus gestionnaire" : "Nommé gestionnaire",
+    );
+  }
+
+  function removeMember(m: GroupMemberRow) {
+    if (!window.confirm(`Retirer ${m.name} ? Ses versements restent dans l’historique.`)) return;
+    setOpened(null);
+    run(() => api(`/group/members/${m.id}/`, { method: "DELETE" }), "Membre retiré");
+  }
   const tontine = current?.kind === "tontine";
 
   async function run(action: () => Promise<unknown>, success: string) {
@@ -158,7 +188,11 @@ export default function GroupMembersPage() {
                 m.late_count > 0 && "border-expense/40",
               )}
             >
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setOpened(m.id)}
+                className="flex w-full items-center gap-3 text-left"
+              >
                 {tontine && (
                   <span className="bg-muted flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                     {i + 1}
@@ -190,87 +224,29 @@ export default function GroupMembersPage() {
                   </p>
                 </div>
                 <StatusDots statuses={m.statuses} />
-              </div>
+              </button>
 
-              {manager && (
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                  {tontine && (
-                    <>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label="Monter"
-                        disabled={i === 0 || busy}
-                        onClick={() => move(m, -1)}
-                      >
-                        <ArrowUp />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label="Descendre"
-                        disabled={i === board.members.length - 1 || busy}
-                        onClick={() => move(m, 1)}
-                      >
-                        <ArrowDown />
-                      </Button>
-                    </>
-                  )}
-                  {m.user && m.role !== "owner" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        run(
-                          () =>
-                            api(`/group/members/${m.id}/role/`, {
-                              method: "POST",
-                              body: { manager: m.role !== "manager" },
-                            }),
-                          m.role === "manager" ? "N’est plus gestionnaire" : "Nommé gestionnaire",
-                        )
-                      }
-                    >
-                      {m.role === "manager" ? "Retirer gestionnaire" : "Nommer gestionnaire"}
-                    </Button>
-                  )}
+              {manager && tontine && (
+                <div className="mt-2 flex items-center gap-1">
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    className="ml-auto"
-                    aria-label="Modifier"
-                    onClick={() =>
-                      setDraft({
-                        id: m.id,
-                        name: m.name,
-                        phone: phoneValue(m.phone || null),
-                        expected_amount: m.expected_amount ? String(Number(m.expected_amount)) : "",
-                      })
-                    }
+                    aria-label="Monter"
+                    disabled={i === 0 || busy}
+                    onClick={() => move(m, -1)}
                   >
-                    <Pencil />
+                    <ArrowUp />
                   </Button>
-                  {!m.user && (
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label="Retirer"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `Retirer ${m.name} ? Ses versements restent dans l’historique.`,
-                          )
-                        )
-                          run(
-                            () => api(`/group/members/${m.id}/`, { method: "DELETE" }),
-                            "Membre retiré",
-                          );
-                      }}
-                    >
-                      <Trash2 />
-                    </Button>
-                  )}
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="Descendre"
+                    disabled={i === board.members.length - 1 || busy}
+                    onClick={() => move(m, 1)}
+                  >
+                    <ArrowDown />
+                  </Button>
+                  <span className="text-muted-foreground text-xs">Ordre de passage</span>
                 </div>
               )}
             </li>
@@ -279,9 +255,21 @@ export default function GroupMembersPage() {
       )}
 
       <p className="text-muted-foreground text-xs">
-        Les points résument les {tontine ? "séances" : "dernières périodes"} : vert payé, orange à
-        valider, rouge en retard, gris à venir.
+        Touchez un membre pour voir sa fiche complète. Les points résument les{" "}
+        {tontine ? "séances" : "dernières périodes"} : vert payé, orange à valider, rouge en retard,
+        gris à venir.
       </p>
+
+      {board && (
+        <MemberSheet
+          member={openedMember}
+          board={board}
+          onClose={() => setOpened(null)}
+          onEdit={editMember}
+          onToggleManager={toggleManager}
+          onRemove={removeMember}
+        />
+      )}
 
       <Dialog open={draft !== null} onOpenChange={(o) => !o && setDraft(null)}>
         <DialogContent>
